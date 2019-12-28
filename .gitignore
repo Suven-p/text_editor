@@ -1,0 +1,5 @@
+.vscode/
+build/
+Executable/
+test_data/
+Sources/Snippets

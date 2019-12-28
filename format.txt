@@ -1,0 +1,93 @@
+Header files-
+0. Named after class. Uses hpp extension
+	AutoComplete.hpp
+1. Uses include guard.
+	// file: AutoComplete.hpp
+	#pragma once
+	OR
+	// file: AutoComplete.hpp
+	#ifndef AutoComplete_HPP_INCLUDED
+	#define AutoComplete_HPP_INCLUDED
+	class AutoComplete
+	{...}
+	#endif
+2. No header file uses "using" statement.
+	// file: AutoComplete.hpp
+	#include <string>
+	using namespace std; // 😠
+
+Variables-
+0. Local variables use snake case.
+	int my_variable;
+   Global variables start with g_ and use ALL CAPS.
+	char* g_CURRENT_WORKING_DIRECTORY;
+   External variables start with extern_ and use ALL CAPS.
+	extern char* extern_CURRENT_WORKING_DIRECTORY;
+   Private members of class or struct start with m_
+	bool m_is_end;
+
+
+Functions-
+0. Function names use snake case.
+	std::string os::get_path()
+	{...}
+1. All functions using "windows.h" are in namespace "os".
+
+
+Classes-
+0. Class names start with block letter and use CamelCase.
+	class AutoComplete
+	{...}
+1. Constructors use initializer lists.
+2. Class declaration are in header file named after class. Functions are defined in cpp file of same name.
+	// file: AutoComplete.hpp
+	class AutoComplete
+	{
+		trie t1;
+	public:
+		AutoComplete(trie t):
+			t1(t)					// uses initializer list
+		{...}
+		void get_prediction(std::string word);
+	...
+	}
+	
+	// file AutoComplete.cpp
+	void AutoComplete::get_prediction(string word)
+	{...}
+3. Objects are initialized using uniform(brace) initialization.
+	AutoComplete a1{trie()};
+	AutoComplete a1(trie()); // compiler error
+
+Comments-
+1. Uses // not /*
+2. Has space after //
+	// this is a comment.
+
+Loops-
+1. Loops to array or vector use range based loop if index is not required.
+	
+	void AutoComplete::insert(std::string word)
+	{
+		...
+		for(char c:word) 				// loop through each character of word
+		{...}
+	}
+2. Loops requiring loop index use size_t or auto for index. Function call in conditional statement is avoided.
+	int search_string(std::vector<std::string> vector_lines)
+	{
+		// for (int i = 0; i < vector_lines.size(); i++)  // Bad: uses int, uses function call in conditional
+		for (size_t i = 0, num_lines = vector_lines.size(); i < num_lines; i++) // Good
+		// for (auto i = 0, num_lines = vector_lines.size(); i < num_lines; i++) // Good: compiler decides type
+		{...}
+		return line_number + 1;
+	}
+
+(✖╭╮✖)			
+		
+
+
+
+			
+		
+
