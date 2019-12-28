@@ -1,0 +1,4 @@
+.vscode/
+build/
+executable/
+test_data/
