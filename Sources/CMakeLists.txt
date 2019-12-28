@@ -2,6 +2,7 @@ set(class_files File.cpp
     Basewindow.cpp
     Mainwindow.cpp
     TextWindow.cpp
+    AutoComplete.cpp
     )
 set(other_files main.cpp)
 
@@ -18,6 +19,9 @@ set(src ${class_files} ${other_files})
 
 set(headers ${class_headers} ${other_headers})
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/Executable)
+
 add_executable(${CMAKE_PROJECT_NAME} ${src} ${headers})
 
 target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/Headers)
+
