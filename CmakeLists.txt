@@ -1,0 +1,7 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 3.16)
+
+project(text_editor
+        DESCRIPTION "A basic text editor"
+        LANGUAGES CXX)
+
+add_subdirectory(Sources)
