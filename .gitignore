@@ -1,3 +1,4 @@
-build/**
-.vscode/**
-test_data/**
+build/
+executable/
+.vscode/
+test_data/
