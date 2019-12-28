@@ -1,14 +1,23 @@
-set(src file.cpp
-    init.cpp
-    main.cpp
-    system.cpp
-    trie.cpp)
+set(class_files File.cpp
+    Basewindow.cpp
+    Mainwindow.cpp
+    TextWindow.cpp
+    )
+set(other_files main.cpp)
 
-set(headers ${CMAKE_SOURCE_DIR}/Headers/fatal_error.hpp
-    ${CMAKE_SOURCE_DIR}/Headers/file.hpp
-    ${CMAKE_SOURCE_DIR}/Headers/init.hpp
-    ${CMAKE_SOURCE_DIR}/Headers/system.hpp)
+#generate header file names from class file names
+set(class_headers "")
+foreach(STR ${class_files})
+    string(REPLACE ".cpp" ".hpp" class_header ${STR})
+    list(APPEND class_headers "${CMAKE_SOURCE_DIR}/Headers/${class_header}")
+endforeach(STR ${class_files})
 
-include_directories(${CMAKE_SOURCE_DIR}/Headers)
+set(other_headers "")
 
-add_executable(${CMAKE_PROJECT_NAME} ${src})
+set(src ${class_files} ${other_files})
+
+set(headers ${class_headers} ${other_headers})
+
+add_executable(${CMAKE_PROJECT_NAME} ${src} ${headers})
+
+target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/Headers)
