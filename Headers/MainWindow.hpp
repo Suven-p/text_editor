@@ -7,7 +7,7 @@ namespace Os
     class MainWindow : public Os::BaseWindow<MainWindow>
     {
     public:
-        PCSTR  ClassName() const { return "Sample Window Class"; }
+        PCSTR  ClassName() const { return "Main Window Class"; }
         LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
     };
 }
