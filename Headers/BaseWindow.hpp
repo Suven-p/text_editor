@@ -50,18 +50,19 @@ namespace Os
             )
         {
             WNDCLASS wc = {0};
-
-            wc.lpfnWndProc   = DERIVED_TYPE::WindowProc;
-            wc.hInstance     = GetModuleHandle(NULL);
-            wc.lpszClassName = ClassName();
-
-            RegisterClass(&wc);
-
+            bool class_exists = GetClassInfo(GetModuleHandle(NULL), ClassName(), &wc);
+            if(!class_exists)
+            {
+                wc.lpfnWndProc   = DERIVED_TYPE::WindowProc;
+                wc.hInstance     = GetModuleHandle(NULL);
+                wc.lpszClassName = ClassName();
+                RegisterClass(&wc);
+            }
+            
             m_hwnd = CreateWindowEx(
                 dwExStyle, ClassName(), lpWindowName, dwStyle, x, y,
                 nWidth, nHeight, hWndParent, hMenu, GetModuleHandle(NULL), this
                 );
-
             return (m_hwnd ? TRUE : FALSE);
         }
 
