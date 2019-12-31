@@ -1,4 +1,5 @@
 #include <string>
+#include <fstream>
 #include "File.hpp"
 #include "Os.hpp"
 
