@@ -21,7 +21,7 @@ string Os::get_file_name(HWND owner)
     ofn.lpstrInitialDir = NULL;
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 
-        // Display the Open dialog box.
+    // Display the Open dialog box.
 
     if (GetOpenFileName(&ofn)==TRUE)
         return static_cast<string>(file_name);
