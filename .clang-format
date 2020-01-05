@@ -1,0 +1,15 @@
+BasedOnStyle: Microsoft
+AlignConsecutiveMacros: true
+AlignOperands: true
+AlignTrailingComments: true
+BinPackArguments: false
+IndentWidth: 4
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+NamespaceIndentation: Inner
+TabWidth: 4
+UseTab: Never
+AlwaysBreakTemplateDeclarations: Yes
+SpaceBeforeRangeBasedForLoopColon: true
+
+
