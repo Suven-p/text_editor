@@ -5,8 +5,9 @@ set(class_files
     Mainwindow.cpp
     Os.cpp
     TextWindow.cpp
-    #Trie.cpp
-    )
+    Trie.cpp
+    TabControl.cpp
+)
 set(other_files 
     main.cpp
 )

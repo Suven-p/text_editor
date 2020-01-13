@@ -10,7 +10,7 @@ template <class DERIVED_TYPE>
 class BaseWindow
 {
   public:
-    static LRESULT CALLBACK WindowProc(HWND hw nd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+    static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         DERIVED_TYPE *pThis = NULL;
 
@@ -45,13 +45,15 @@ class BaseWindow
     {
         WNDCLASSEX wc = {0};
 
-        wc.lpfnWndProc = DERIVED_TYPE::WindowProc;
-        wc.hInstance = GetModuleHandle(NULL);
-        wc.lpszClassName = ClassName();
-        wc.cbSize = sizeof(WNDCLASSEX);
-
-        RegisterClassEx(&wc);
-
+        if (!GetClassInfoEx(GetModuleHandle(NULL), ClassName(), &wc))
+        {
+            wc.lpfnWndProc = DERIVED_TYPE::WindowProc;
+            wc.hInstance = GetModuleHandle(NULL);
+            wc.lpszClassName = ClassName();
+            wc.cbSize = sizeof(WNDCLASSEX);
+            RegisterClassEx(&wc);
+        }
+        
         m_hwnd = CreateWindowEx(dwExStyle,
                                 ClassName(),
                                 lpWindowName,

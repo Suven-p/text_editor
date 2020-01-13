@@ -52,7 +52,19 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_TEXT_EDITOR_MainWindow   ICON                    "Icon_MainWindow.ico"
+IDI_TEXT_EDITOR_MainWindow ICON                    "Icon_MainWindow.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDM_TEXT_EDITOR_MainWindow MENU
+BEGIN
+    MENUITEM "File",                        0
+    MENUITEM "Edit",                        0
+END
 
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
