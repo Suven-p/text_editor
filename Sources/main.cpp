@@ -3,6 +3,13 @@
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hinstance, LPSTR pCmdLine, int nCmdShow)
 {
+    
+    HMODULE hmod = LoadLibrary("../SciLexer.DLL");
+    if (hmod == NULL)
+    {
+        MessageBox(
+            0, "The Scintilla DLL could not be loaded.", "Error loading Scintilla", MB_OK | MB_ICONERROR);
+    }
     Os::MainWindow main_window;
     HMENU main_menu = LoadMenu(hinstance, MAKEINTRESOURCE(IDM_TEXT_EDITOR_MainWindow));
     if (!main_window.Create("Text Editor",
