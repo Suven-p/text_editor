@@ -1,5 +1,13 @@
 .vscode/
+.vs/
 build/
 Executable/
+~Executable/SciLexer.dll
+~Executable/Scintilla.dll
+~Executable/sci64/
 test_data/
-Sources/Snippets
+*.obj
+CMakeSettings.json
+CppProperties1.json
+Resources/RC*
+

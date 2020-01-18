@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Os.hpp"
-#include "resource.hpp"
-#include <windows.h>
 
 namespace Os
 {
@@ -36,15 +34,12 @@ class BaseWindow
         }
     }
 
-    BaseWindow() : m_hwnd(NULL)
-    {
-    }
+    BaseWindow() : m_hwnd(NULL){}
 
-    BOOL Create(PCSTR lpWindowName, DWORD dwStyle, DWORD dwExStyle = 0, int x = CW_USEDEFAULT, int y = CW_USEDEFAULT,
+    BOOL Create(LPCTSTR lpWindowName, DWORD dwStyle, DWORD dwExStyle = 0, int x = CW_USEDEFAULT, int y = CW_USEDEFAULT,
                 int nWidth = CW_USEDEFAULT, int nHeight = CW_USEDEFAULT, HWND hWndParent = 0, HMENU hMenu = 0)
     {
         WNDCLASSEX wc = {0};
-
         if (!GetClassInfoEx(GetModuleHandle(NULL), ClassName(), &wc))
         {
             wc.lpfnWndProc = DERIVED_TYPE::WindowProc;
@@ -76,7 +71,7 @@ class BaseWindow
     }
 
   protected:
-    virtual PCSTR ClassName() const = 0;
+    virtual LPCTSTR ClassName() const = 0;
     virtual LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) = 0;
 
     HWND m_hwnd;

@@ -1,12 +1,13 @@
 #pragma once
 
 #include "BaseWindow.hpp"
-#include "Os.hpp"
 #include <CommCtrl.h>
 
 #define ID_TEXT_EDITOR_EDIT 1000
-#define MAX_TABS 10
+#define MAX_TABS            100
 
+namespace Os
+{
 class TabControl
 {
   private:
@@ -54,3 +55,4 @@ class TabControl
         return rc;
     }
 };
+} // namespace Os

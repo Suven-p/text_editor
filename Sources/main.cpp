@@ -1,18 +1,19 @@
 #include "MainWindow.hpp"
+#include "Scintilla.h"
 #include "resource.hpp"
+#include <cstring>
+#include <shlwapi.h>
+
+bool init();
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hinstance, LPSTR pCmdLine, int nCmdShow)
 {
-    
-    HMODULE hmod = LoadLibrary("../SciLexer.DLL");
-    if (hmod == NULL)
+    if (!init())
     {
-        MessageBox(
-            0, "The Scintilla DLL could not be loaded.", "Error loading Scintilla", MB_OK | MB_ICONERROR);
+        return -1;
     }
     Os::MainWindow main_window;
-    HMENU main_menu = LoadMenu(hinstance, MAKEINTRESOURCE(IDM_TEXT_EDITOR_MainWindow));
-    if (!main_window.Create("Text Editor",
+    if (!main_window.Create(TEXT("Text Editor"),
                             WS_OVERLAPPEDWINDOW | WS_BORDER,
                             WS_EX_APPWINDOW,
                             CW_USEDEFAULT,
@@ -23,12 +24,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hinstance, LPSTR pCmdLine, int
                             0))
     {
         char error[100];
-        sprintf(error, "Error %d", GetLastError());
-        MessageBox(0, error, "ERROR!", MB_OK);
+        sprintf(error, "Error %d: Cannot create main window!", GetLastError());
+        MessageBoxA(0, error, "ERROR!", MB_OK);
     }
 
     ShowWindow(main_window.Window(), nCmdShow);
-    
+
     MSG msg = {};
     while (GetMessage(&msg, NULL, 0, 0))
     {

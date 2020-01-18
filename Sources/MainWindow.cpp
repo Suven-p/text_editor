@@ -1,4 +1,5 @@
 #include "MainWindow.hpp"
+#include "Scintilla.h"
 #include "TabControl.hpp"
 #include "resource.hpp"
 
@@ -8,21 +9,23 @@ LRESULT Os::MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
     case WM_CREATE: {
         HICON icon_MainWindow = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_TEXT_EDITOR_MainWindow));
+        HMENU main_menu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDM_TEXT_EDITOR_MainWindow));
         SendMessage(m_hwnd, WM_SETICON, ICON_BIG, (LPARAM)icon_MainWindow);
         SendMessage(m_hwnd, WM_SETICON, ICON_SMALL, (LPARAM)icon_MainWindow);
+        SetMenu(m_hwnd, main_menu);
         tbctrl = TabControl(m_hwnd);
         tbctrl.Create();
-        tbctrl.New_tab("Test");
-        tbctrl.New_tab("test2");
-        tbctrl.New_tab("test3");
+        tbctrl.New_tab(TEXT("Test"));
+        tbctrl.New_tab(TEXT("test2"));
+        tbctrl.New_tab(TEXT("test3"));
         return 0;
     }
-        
+
     case WM_NOTIFY: {
         LPNMHDR info = (LPNMHDR)lParam;
         switch (info->code)
         {
-            //NM_CHAR
+            // NM_CHAR
         case TCN_SELCHANGING: {
             int selected = info->idFrom;
             selected = TabCtrl_GetCurSel(tbctrl.Window());
@@ -39,24 +42,22 @@ LRESULT Os::MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
             InvalidateRect(tbctrl.Tab(selected), NULL, TRUE);
             UpdateWindow(tbctrl.Tab(selected));
             ShowWindow(tbctrl.Tab(selected), SW_SHOW);
+            SetFocus(tbctrl.Tab(selected));
             return TRUE;
         }
         default: {
-            
             return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
         }
         }
-        
-    
     }
     case WM_DESTROY: {
         PostQuitMessage(0);
         return 0;
     }
-        case WM_SIZE: {
-            MoveWindow(tbctrl.Window(), 0, 0, LOWORD(lParam), HIWORD(lParam), TRUE);
-            return 0;
-        }
+    case WM_SIZE: {
+        MoveWindow(tbctrl.Window(), 0, 0, LOWORD(lParam), HIWORD(lParam), TRUE);
+        return 0;
+    }
 
     default:
         return DefWindowProc(m_hwnd, uMsg, wParam, lParam);

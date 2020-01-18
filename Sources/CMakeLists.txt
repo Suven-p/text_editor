@@ -10,6 +10,8 @@ set(class_files
 )
 set(other_files 
     main.cpp
+	init.cpp
+	
 )
 
 #generate header file names from class file names
@@ -21,6 +23,7 @@ endforeach(STR ${class_files})
 
 set(other_headers 
 	"${CMAKE_SOURCE_DIR}/Resources/resource.hpp"
+	"${CMAKE_SOURCE_DIR}/Headers/parameters.hpp"
 )
 
 set(src 
@@ -41,5 +44,15 @@ add_executable(${CMAKE_PROJECT_NAME} WIN32 ${src} ${headers} ${resources})
 
 target_include_directories(${CMAKE_PROJECT_NAME} 
 	PUBLIC "${CMAKE_SOURCE_DIR}/Headers"
-	PUBLIC "${CMAKE_SOURCE_DIR}/Resources")
+	PUBLIC "${CMAKE_SOURCE_DIR}/Resources"
+	PUBLIC "${CMAKE_SOURCE_DIR}/scintilla/include"
+)
+target_link_libraries(${CMAKE_PROJECT_NAME} 
+		Shlwapi.lib
+		Comctl32.lib
+)
+
+set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES 
+    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Debug"
+	)
 
