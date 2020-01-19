@@ -4,7 +4,7 @@ build/
 Executable/
 !Executable/SciLexer.dll
 !Executable/Scintilla.dll
-!Executable/sci64/
-!Executable/sci32/
+!Executable/sci64/*
+!Executable/sci32/*
 test_data/
 *.obj
