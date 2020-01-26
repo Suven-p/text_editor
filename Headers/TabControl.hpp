@@ -18,21 +18,19 @@ class TabControl
     unsigned int m_num_tabs;
 
   public:
-    TabControl() : m_parent_hwnd(NULL), m_num_tabs(0), m_hwnd(NULL), m_edit_hwnd()
+    TabControl() : m_parent_hwnd(NULL), m_hwnd(NULL), m_num_tabs(0)
     {
+        for (auto &h : m_edit_hwnd)
+        {
+            h = nullptr;
+        }
     }
-
-    TabControl(HWND parent_hwnd)
+    TabControl(HWND parent_hwnd): m_parent_hwnd(parent_hwnd), m_hwnd(NULL), m_num_tabs(0)
     {
-        m_parent_hwnd = parent_hwnd;
-        INITCOMMONCONTROLSEX icex;
-        icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
-        icex.dwICC = ICC_TAB_CLASSES;
-        InitCommonControlsEx(&icex);
-        m_num_tabs = 0;
-        for (int i = 0; i < MAX_TABS; i++)
-            m_edit_hwnd[i] = nullptr;
-        m_hwnd = 0;
+        for (auto &h : m_edit_hwnd)
+        {
+            h = nullptr;
+        }
         GetClientRect(m_parent_hwnd, &parent_rect);
     }
     ~TabControl() = default;
@@ -43,6 +41,10 @@ class TabControl
     HWND Window()
     {
         return m_hwnd;
+    }
+    int num_tabs()
+    {
+        return m_num_tabs;
     }
     HWND Tab(int i)
     {
