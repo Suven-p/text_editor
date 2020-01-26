@@ -1,5 +1,8 @@
 .vscode/
 .vs/
+vs/
+scintilla/*
+*.json
 build/
 Executable/
 !Executable/SciLexer.dll
@@ -8,3 +11,5 @@ Executable/
 !Executable/sci32/*
 test_data/
 *.obj
+*.aps
+*.rc

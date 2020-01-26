@@ -2,12 +2,18 @@
 #include "Scintilla.h"
 #include "TabControl.hpp"
 #include "resource.hpp"
+#include <vector>
 
 LRESULT Os::MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
     case WM_CREATE: {
+        INITCOMMONCONTROLSEX icex;
+        icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
+        icex.dwICC = ICC_TAB_CLASSES;
+        InitCommonControlsEx(&icex);
+
         HICON icon_MainWindow = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_TEXT_EDITOR_MainWindow));
         HMENU main_menu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDM_TEXT_EDITOR_MainWindow));
         SendMessage(m_hwnd, WM_SETICON, ICON_BIG, (LPARAM)icon_MainWindow);
@@ -21,6 +27,70 @@ LRESULT Os::MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         return 0;
     }
 
+    case WM_DRAWITEM: {
+        LPDRAWITEMSTRUCT di = (LPDRAWITEMSTRUCT)lParam;
+        HDC hdc = di->hDC;
+        RECT rect = di->rcItem;
+        if (di->CtlType == ODT_TAB)
+        {
+            int selected_tab = di->CtlID;
+            bool is_selected = (selected_tab == ::SendMessage(tbctrl.Window(), TCM_GETCURSEL, 0, 0));
+            TCHAR label[MAX_PATH];
+            TCITEM tci;
+            tci.mask = TCIF_TEXT | TCIF_IMAGE;
+            tci.pszText = label;
+            tci.cchTextMax = MAX_PATH - 1;
+
+            SendMessage(tbctrl.Window(), TCM_GETITEM, selected_tab, reinterpret_cast<LPARAM>(&tci));
+          
+            int saved_dc = SaveDC(hdc);
+
+            SetBkMode(hdc, TRANSPARENT);
+            HBRUSH hBrush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
+            FillRect(hdc, &rect, hBrush);
+            ::DeleteObject((HGDIOBJ)hBrush);
+
+            // equalize drawing areas of active and inactive tabs
+            int X_padding = 2;
+            int Y_padding = 2;
+            if (is_selected)
+            {
+                // the drawing area of the active tab extends on all borders by default
+                rect.top += GetSystemMetrics(SM_CYEDGE);
+                rect.bottom -= GetSystemMetrics(SM_CYEDGE);
+                rect.left += GetSystemMetrics(SM_CXEDGE);
+                rect.right -= GetSystemMetrics(SM_CXEDGE);
+                rect.top += X_padding;
+                rect.bottom -= Y_padding;
+            }
+            else
+            {
+                rect.left -= X_padding;
+                rect.right += X_padding;
+                rect.top += Y_padding;
+                rect.bottom += Y_padding;
+            }
+
+            // if (is_selected)
+            //{
+            //    hBrush = ::CreateSolidBrush(RGB(0xFA, 0xAA, 0x3C)); // #FAAA3C
+            //    FillRect(hdc, &rect, hBrush);
+            //    DeleteObject((HGDIOBJ)hBrush);
+            //}
+            // else
+            //{
+            //    hBrush = ::CreateSolidBrush(RGB(0xFA, 0xD2, 0x96));
+            //    FillRect(hdc, &rect, hBrush);
+            //    DeleteObject((HGDIOBJ)hBrush);
+            //}
+            LPSTR str = new CHAR[MAX_PATH];
+            TextOutA(hdc, 0, 0, str, sprintf(str, "Hello123"));
+            RestoreDC(hdc, saved_dc);
+        }
+
+            
+        
+    }
     case WM_NOTIFY: {
         LPNMHDR info = (LPNMHDR)lParam;
         switch (info->code)
@@ -35,9 +105,6 @@ LRESULT Os::MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
         case TCN_SELCHANGE: {
             int selected = TabCtrl_GetCurSel(tbctrl.Window());
-
-            RECT test;
-            TabCtrl_GetItemRect(tbctrl.Window(), selected, &test);
 
             InvalidateRect(tbctrl.Tab(selected), NULL, TRUE);
             UpdateWindow(tbctrl.Tab(selected));
@@ -56,6 +123,18 @@ LRESULT Os::MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
     }
     case WM_SIZE: {
         MoveWindow(tbctrl.Window(), 0, 0, LOWORD(lParam), HIWORD(lParam), TRUE);
+        RECT size = tbctrl.Get_size();
+        TabCtrl_AdjustRect(tbctrl.Window(), FALSE, &size);
+        for (int i = 0; i < tbctrl.num_tabs(); i++)
+        {
+            MoveWindow(tbctrl.Tab(i), 0, 25, size.right, size.bottom - 25, TRUE);
+            int selected = TabCtrl_GetCurSel(tbctrl.Window());
+            InvalidateRect(tbctrl.Tab(selected), NULL, TRUE);
+            UpdateWindow(tbctrl.Tab(selected));
+            ShowWindow(tbctrl.Tab(selected), SW_SHOW);
+            SetFocus(tbctrl.Tab(selected));
+        }
+
         return 0;
     }
 
