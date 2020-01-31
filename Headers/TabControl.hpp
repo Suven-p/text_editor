@@ -1,10 +1,12 @@
 #pragma once
 
 #include "BaseWindow.hpp"
+#include "EditControl.hpp"
+#include "Os.hpp"
 #include <CommCtrl.h>
+#include <vector>
 
-#define ID_TEXT_EDITOR_EDIT 1000
-#define MAX_TABS            100
+#define MAX_TABS 100
 
 namespace Os
 {
@@ -13,32 +15,26 @@ class TabControl
   private:
     HWND m_parent_hwnd;
     HWND m_hwnd;
-    HWND m_edit_hwnd[MAX_TABS];
+    std::vector<HWND> m_edit_hwnd;
     RECT parent_rect;
     unsigned int m_num_tabs;
 
   public:
-    TabControl() : m_parent_hwnd(NULL), m_hwnd(NULL), m_num_tabs(0)
+    TabControl() : m_parent_hwnd(NULL), m_hwnd(NULL), m_num_tabs(0), m_edit_hwnd(MAX_TABS, nullptr)
+    {}
+    TabControl(HWND parent_hwnd)
+        : m_parent_hwnd(parent_hwnd), m_hwnd(NULL), m_num_tabs(0), m_edit_hwnd(MAX_TABS, nullptr)
     {
-        for (auto &h : m_edit_hwnd)
-        {
-            h = nullptr;
-        }
-    }
-    TabControl(HWND parent_hwnd): m_parent_hwnd(parent_hwnd), m_hwnd(NULL), m_num_tabs(0)
-    {
-        for (auto &h : m_edit_hwnd)
-        {
-            h = nullptr;
-        }
         GetClientRect(m_parent_hwnd, &parent_rect);
+
     }
     ~TabControl() = default;
+    
 
-    BOOL Create();
-    BOOL New_tab(TCHAR *label);
-    BOOL New_edit(HWND parent);
-    HWND Window()
+    bool create();
+    bool new_tab(TCHAR *label);
+    bool new_edit(HWND parent);
+    HWND window()
     {
         return m_hwnd;
     }
@@ -46,11 +42,11 @@ class TabControl
     {
         return m_num_tabs;
     }
-    HWND Tab(int i)
+    HWND tab(int i)
     {
         return m_edit_hwnd[i];
     }
-    RECT Get_size()
+    RECT get_size()
     {
         RECT rc;
         GetClientRect(m_hwnd, &rc);

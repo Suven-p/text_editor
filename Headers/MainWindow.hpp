@@ -12,10 +12,7 @@ class MainWindow : public Os::BaseWindow<MainWindow>
     TabControl tbctrl;
 
   public:
-    LPCTSTR ClassName() const
-    {
-        return TEXT("Main Window Class");
-    }
-    LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
+    LPCTSTR class_name() const;
+    LRESULT handle_message(UINT uMsg, WPARAM wParam, LPARAM lParam);
 };
 } // namespace Os

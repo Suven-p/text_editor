@@ -4,9 +4,9 @@ set(class_files
     File.cpp
     Mainwindow.cpp
     Os.cpp
-    TextWindow.cpp
     Trie.cpp
     TabControl.cpp
+	EditControl.cpp
 )
 set(other_files 
     main.cpp
