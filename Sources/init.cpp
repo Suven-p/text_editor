@@ -1,9 +1,8 @@
-#include <string>
+#include "EditControl.hpp"
 #include "Os.hpp"
 #include "Scintilla.h"
 #include "parameters.hpp"
-#include "EditControl.hpp"
-
+#include <string>
 
 HINSTANCE EditControl::m_hscintilla = LoadLibrary("SciLexer.dll");
 #ifdef UNICODE_EXE_DIR
