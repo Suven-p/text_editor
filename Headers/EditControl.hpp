@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <vector>
 
-using SCINTILLA_FUNC = int (__cdecl *)(void *, int, int, int);
+using SCINTILLA_FUNC = int(__cdecl *)(void *, int, int, int);
 using SCINTILLA_PTR = void *;
 using BUFFER_ARRAY = std::vector<Buffer>;
 using CHARACTER_RANGE = Sci_CharacterRange;
@@ -64,7 +64,8 @@ class EditControl : public Os::BaseWindow
     LRESULT execute(UINT Msg, WPARAM wParam = 0, LPARAM lParam = 0) const
     {
         return SendMessage(m_hwnd, Msg, wParam, lParam);
-        //return m_scintilla_function(m_scintilla_pointer, static_cast<int>(Msg), static_cast<int>wParam), static_cast<int>(lParam));
+        // return m_scintilla_function(m_scintilla_pointer, static_cast<int>(Msg), static_cast<int>wParam),
+        // static_cast<int>(lParam));
     };
 
     void set_document_language(LangType typeDoc);

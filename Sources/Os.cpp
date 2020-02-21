@@ -1,13 +1,13 @@
-#include <string>
 #include "Os.hpp"
+#include <string>
 
 using namespace std;
 
 wstring Os::get_file_name(HWND owner)
 {
-    OPENFILENAMEW ofn = {};         // common dialog box structure
+    OPENFILENAMEW ofn = {};          // common dialog box structure
     WCHAR file_name[MAX_PATH] = L""; // buffer for file name
-    HANDLE hf;                     // file handle
+    HANDLE hf;                       // file handle
 
     ofn.lStructSize = sizeof(ofn);
     ofn.hwndOwner = owner;
@@ -36,10 +36,10 @@ auto Os::get_exe_dir()
 {
     TCHAR current[MAX_PATH];
     Os::get_current_dir(current, MAX_PATH);
-    #ifdef UNICODE
+#ifdef UNICODE
     std::wstring EXECUTABLE_DIRECTORY = current;
-    #else
+#else
     std::string EXECUTABLE_DIRECTORY = current;
-    #endif
+#endif
     return EXECUTABLE_DIRECTORY;
 }

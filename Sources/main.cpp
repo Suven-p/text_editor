@@ -8,13 +8,12 @@ bool init();
 
 bool Os::BaseWindow::use_dark_mode = false;
 
-int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR pCmdLine,
-                   _In_ int nCmdShow)
+int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR pCmdLine, _In_ int nCmdShow)
 {
     if (!init())
     {
         return -1;
-    } 
+    }
     Os::MainWindow main_window(hInstance);
     main_window.create(TEXT("Text Editor"),
                        WS_OVERLAPPEDWINDOW,
@@ -25,7 +24,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
                        CW_USEDEFAULT,
                        0,
                        0);
-    
 
     ShowWindow(main_window.window(), nCmdShow);
 

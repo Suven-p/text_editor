@@ -3,8 +3,8 @@
 //#define _WIN32_WINNT  NTDDI_VERSION
 //#define STRICT
 
-#include <string>
 #include <Windows.h>
+#include <string>
 
 namespace Os
 {

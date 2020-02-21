@@ -7,6 +7,11 @@
 #include <windows.h>
 
 // initialize the static variable
+#ifdef _WIN64
+HINSTANCE EditControl::m_hscintilla = LoadLibrary("sci64\\SciLexer.dll");
+#else
+HINSTANCE EditControl::m_hscintilla = LoadLibrary("sci32\\SciLexer.dll");
+#endif
 int EditControl::m_num_objects = 0;
 UserDefineDialog EditControl::_userDefineDlg;
 
@@ -93,12 +98,12 @@ void EditControl::init(HINSTANCE hInst, HWND hparent)
     showMargin(m_folder_margin);
     showMargin(m_symbol_margin);
 
-    ::SendMessage(m_hwnd, SCI_SETPROPERTY, (WPARAM)"fold.comment", (LPARAM)"1");
-   /*     execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold"), reinterpret_cast<LPARAM>("1"));
-    execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold.compact"), reinterpret_cast<LPARAM>("1"));
-    execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold.comment"), reinterpret_cast<LPARAM>("1"));
-    execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold.preprocessor"), reinterpret_cast<LPARAM>("1"));
-    execute(SCI_SETFOLDFLAGS, SC_FOLDFLAG_LINEAFTER_CONTRACTED, 0);*/
+    ::SendMessage(m_hwnd, SCI_SETPROPERTY, (WPARAM) "fold.comment", (LPARAM) "1");
+    /*     execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold"), reinterpret_cast<LPARAM>("1"));
+     execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold.compact"), reinterpret_cast<LPARAM>("1"));
+     execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold.comment"), reinterpret_cast<LPARAM>("1"));
+     execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold.preprocessor"), reinterpret_cast<LPARAM>("1"));
+     execute(SCI_SETFOLDFLAGS, SC_FOLDFLAG_LINEAFTER_CONTRACTED, 0);*/
     set_marker_style(FolderStyle::FOLDER_STYLE_BOX);
     execute(SCI_SETAUTOMATICFOLD, SC_AUTOMATICFOLD_CHANGE, 0);
     set_marker_style(m_folder_style);
