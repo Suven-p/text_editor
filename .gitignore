@@ -1,0 +1,16 @@
+.vs/
+.vscode/
+vs/
+Executable/
+!Executable/sci32/
+!Executable/sci64/
+!Executable/SciLexer.dll
+!Executable/Scintilla.dll
+!Executable/sci64/*
+!Executable/sci32/*
+test/
+out/
+test_data/
+*.obj
+*.aps
+*.rc
