@@ -4,10 +4,9 @@
 #define _WIN32_IE 0x0600
 #endif //_WIN32_IE
 
-#include "EditControl.hpp"
-
 #include <commctrl.h>
 #include <shlwapi.h>
+#include "EditControl.hpp"
 
 int EditView::m_new_title = 0;
 
@@ -15,13 +14,13 @@ int EditView::m_new_title = 0;
 // otherwise -1
 int EditView::find(const char *fn) const
 {
-    return m_sci_view->findDocIndexByName(fn);
+    return m_sci_view->get_index(fn);
 }
 
 char *EditView::newDocInit()
 {
     // create the new entry for this doc
-    char *newTitle = m_sci_view->attatchDefaultDoc(++m_new_title);
+    char *newTitle = m_sci_view->attach_default_doc(++m_new_title);
 
     // create a new (the first) sub tab then hightlight it
     TabControl::insert(newTitle);
@@ -46,7 +45,7 @@ const char *EditView::newDoc(const char *fn)
 const char *EditView::newDoc(Buffer &buf)
 {
     const char *completName = buf.get_file_name();
-    int i = m_sci_view->addBuffer(buf);
+    int i = m_sci_view->add_buffer(buf);
     m_sci_view->activate_document(i);
 
     // for the title of sub tab
@@ -76,17 +75,17 @@ char *EditView::clickedUpdate()
     m_sci_view->get_focus();
 }
 
-const char *EditView::closeCurrentDoc()
+const char *EditView::close_current()
 {
     if (m_num_tabs == 1)
     {
         newDoc();
-        closeDocAt(0);
+        close_at(0);
     }
     else
     {
         int i2activate;
-        int i2close = m_sci_view->closeCurrentDoc(i2activate);
+        int i2close = m_sci_view->close_current(i2activate);
 
         TabControl::delete_item(i2close);
         TabControl::activate(i2activate);
@@ -96,16 +95,16 @@ const char *EditView::closeCurrentDoc()
 
 const char *EditView::closeAllDocs()
 {
-    m_sci_view->removeAllUnusedDocs();
+    m_sci_view->remove_all_docs();
     TabControl::delete_all();
     m_new_title = 0;
     newDocInit();
     return m_sci_view->get_current_title();
 }
 
-void EditView::closeDocAt(int index2Close)
+void EditView::close_at(int index2Close)
 {
-    m_sci_view->closeDocAt(index2Close);
+    m_sci_view->close_at(index2Close);
     TabControl::delete_item(index2Close);
 }
 
@@ -129,7 +128,7 @@ void EditView::updateTabItem(int index, const char *title)
     if ((title) && (strcmp(title, "")))
         tie.pszText = (char *)title;
 
-    bool isDirty = (m_sci_view->get_buffer(index)).is_dirty();        // isCurrentBufReadOnly();
+    bool isDirty = (m_sci_view->get_buffer(index)).is_dirty();        // is_current_buf_read_only();
     bool isReadOnly = (m_sci_view->get_buffer(index)).is_read_only(); // getCurrentDocStat();
     tie.iImage = isReadOnly ? REDONLY_IMG_INDEX : (isDirty ? UNSAVED_IMG_INDEX : SAVED_IMG_INDEX);
     int y = TabCtrl_SetItem(m_hwnd, index, &tie);

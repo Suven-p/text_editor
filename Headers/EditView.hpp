@@ -18,36 +18,28 @@ class EditView : public TabControl
     {
         destroy();
     }
-
     virtual void destroy()
     {
         TabControl::destroy();
     };
-
     char *init(HINSTANCE hInst, HWND parent, EditControl *sci_view)
     {
         TabControl::init(hInst, parent);
         m_sci_view = sci_view;
         return newDocInit();
     };
-
     char *newDocInit();
     int find(const char *) const;
     char *activate(int index);
-
     const char *newDoc(const char *fn = NULL);
     const char *newDoc(Buffer &buf);
-
     char *clickedUpdate();
-
-    const char *closeCurrentDoc();
+    const char *close_current();
     const char *closeAllDocs();
-    void closeDocAt(int index);
-
+    void close_at(int index);
     // void setCurrentTabItem(const char *title, bool isDirty);
     void updateCurrentTabItem(const char *title = NULL);
     void updateTabItem(int index, const char *title = NULL);
-
     virtual void resize_to(RECT &rc)
     {
         TabControl::resize_to(rc);

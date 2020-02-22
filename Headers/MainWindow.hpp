@@ -1,9 +1,9 @@
 #pragma once
 
-#include "BaseWindow.hpp"
-#include "TabControl.hpp"
 #include <stdexcept>
 #include <string>
+#include "BaseWindow.hpp"
+#include "EditView.hpp"
 
 namespace Os
 {
@@ -24,6 +24,7 @@ class MainWindow : public Os::BaseWindow
         return use_dark_mode;
     }
     void destroy();
+    void notify(SCNotification *);
     static LRESULT CALLBACK window_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
         Os::MainWindow *p_this = NULL;
@@ -53,6 +54,8 @@ class MainWindow : public Os::BaseWindow
 
   private:
     WNDCLASSEXA wc;
+    EditView dc1;
+    EditControl sce1;
     LPCTSTR class_name() const;
     LRESULT handle_message(UINT uMsg, WPARAM wParam, LPARAM lParam);
 };

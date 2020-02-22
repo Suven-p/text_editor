@@ -45,7 +45,7 @@ void TabControl::init(HINSTANCE hInst, HWND parent)
     }
     ::SetWindowLongPtr(m_hwnd, GWL_USERDATA, reinterpret_cast<LONG_PTR>(this));
     m_default_proc =
-        reinterpret_cast<WNDPROC>(::SetWindowLongPtr(m_hwnd, GWL_WNDPROC, reinterpret_cast<LONG_PTR>(TabBar_Proc)));
+        reinterpret_cast<WNDPROC>(::SetWindowLongPtr(m_hwnd, GWL_WNDPROC, reinterpret_cast<LONG_PTR>(tabbar_proc)));
     ::SetCursor(::LoadCursor(m_hInstance, IDC_ARROW));
     ::SendMessage(m_hwnd, TCM_SETPADDING, 0, MAKELPARAM(6, 5));
 }
@@ -143,7 +143,7 @@ LRESULT TabControl::handle_message(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
             p.y = HIWORD(lParam);
             exchangeItemData(p);
             ::GetCursorPos(&m_drag_point);
-            draggingCursor(m_drag_point);
+            dragging_cursor(m_drag_point);
             return TRUE;
         }
         break;
@@ -294,7 +294,7 @@ void TabControl::draw_item(DRAWITEMSTRUCT *pDrawItemStruct)
     ::RestoreDC(hDC, nSavedDC);
 }
 
-void TabControl::draggingCursor(POINT screenPoint)
+void TabControl::dragging_cursor(POINT screenPoint)
 {
     HWND hWin = ::WindowFromPoint(screenPoint);
     if (m_hwnd == hWin)

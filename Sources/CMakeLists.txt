@@ -6,10 +6,8 @@ set(class_files
     File.cpp
     Mainwindow.cpp
     Os.cpp
-    StaticDialog.cpp
     TabControl.cpp
     Trie.cpp
-    UserDefineDialog.cpp
 )
 set(other_files
     main.cpp
@@ -27,9 +25,8 @@ set(other_headers
 	"${CMAKE_SOURCE_DIR}/Resources/resource.hpp"
 	"${CMAKE_SOURCE_DIR}/Headers/parameters.hpp"
 	"${CMAKE_SOURCE_DIR}/Headers/BaseWindow.hpp"
-	"${CMAKE_SOURCE_DIR}/Headers/Buffer.h"
-        "${CMAKE_SOURCE_DIR}/Headers/colors.h"
-	"${CMAKE_SOURCE_DIR}/Headers/StaticControl.h"
+	"${CMAKE_SOURCE_DIR}/Headers/Buffer.hpp"
+    "${CMAKE_SOURCE_DIR}/Headers/Colors.hpp"
 )
 
 set(src 

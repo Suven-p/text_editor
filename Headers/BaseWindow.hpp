@@ -1,8 +1,5 @@
 #pragma once
 
-//#define NTDDI_VERSION 0x06010000
-//#define _WIN32_WINNT  NTDDI_VERSION
-//#define STRICT
 #include "Os.hpp"
 
 namespace Os
@@ -13,15 +10,12 @@ class BaseWindow
     BaseWindow() : m_hwnd(NULL), m_hparent(NULL), m_hInstance(NULL){};
     BaseWindow(HINSTANCE hInst, HWND parent) : m_hInstance(hInst), m_hparent(parent), m_hwnd(NULL){};
     virtual ~BaseWindow() = default;
-
+    virtual void destroy() = 0;
     virtual void init(HINSTANCE hInst, HWND parent)
     {
         m_hInstance = hInst;
         m_hparent = parent;
     }
-
-    virtual void destroy() = 0;
-
     virtual void display(bool show = true) const
     {
         ::ShowWindow(m_hwnd, (show) ? SW_SHOW : SW_HIDE);
@@ -66,9 +60,9 @@ class BaseWindow
     };
 
   protected:
-    HINSTANCE m_hInstance;
-    HWND m_hparent;
-    HWND m_hwnd;
+    HINSTANCE m_hInstance{nullptr};
+    HWND m_hparent{nullptr};
+    HWND m_hwnd{nullptr};
     static bool use_dark_mode;
 };
 } // namespace Os

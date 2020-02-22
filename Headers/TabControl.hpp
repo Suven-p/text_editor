@@ -73,9 +73,9 @@ class TabControl : public Os::BaseWindow
     POINT m_drag_point;
     void exchangeItemData(POINT point);
 
-    void draw_item(DRAWITEMSTRUCT *pDrawItemStruct);
-    void draggingCursor(POINT screenPoint);
-    static LRESULT CALLBACK TabBar_Proc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
+    void draw_item(DRAWITEMSTRUCT* dis);
+    void dragging_cursor(POINT point);
+    static LRESULT CALLBACK tabbar_proc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
     {
         return ((TabControl *)(::GetWindowLongPtr(hwnd, GWLP_USERDATA)))->handle_message(hwnd, Message, wParam, lParam);
     };

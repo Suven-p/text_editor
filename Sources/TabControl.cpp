@@ -43,7 +43,7 @@ void TabControl::init(HINSTANCE hInst, HWND parent)
     }
     ::SetWindowLongPtr(m_hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
     m_default_proc =
-        reinterpret_cast<WNDPROC>(::SetWindowLongPtr(m_hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(TabBar_Proc)));
+        reinterpret_cast<WNDPROC>(::SetWindowLongPtr(m_hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(tabbar_proc)));
     if (!m_default_proc)
     {
         // ERROR_ABANDONED_WAIT_0
@@ -146,7 +146,7 @@ LRESULT TabControl::handle_message(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
             p.y = HIWORD(lParam);
             exchangeItemData(p);
             ::GetCursorPos(&m_drag_point);
-            draggingCursor(m_drag_point);
+            dragging_cursor(m_drag_point);
             return TRUE;
         }
         break;
@@ -157,12 +157,10 @@ LRESULT TabControl::handle_message(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
         {
             if (::GetCapture() == m_hwnd)
                 ::ReleaseCapture();
-
             NMHDR nmhdr;
             nmhdr.hwndFrom = m_hwnd;
             nmhdr.code = m_is_dragging_insode ? TCN_TABDROPPED : TCN_TABDROPPEDOUTSIDE;
             nmhdr.idFrom = reinterpret_cast<UINT_PTR>(this);
-
             ::SendMessage(m_hparent, WM_NOTIFY, 0, reinterpret_cast<LPARAM>(&nmhdr));
             return TRUE;
         }
@@ -194,17 +192,16 @@ LRESULT TabControl::handle_message(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
     return ::CallWindowProc(m_default_proc, hwnd, msg, wParam, lParam);
 }
 
-void TabControl::draw_item(DRAWITEMSTRUCT *pDrawItemStruct)
+void TabControl::draw_item(DRAWITEMSTRUCT *dis)
 {
-    RECT rect = pDrawItemStruct->rcItem;
+    RECT rect = dis->rcItem;
     rect.bottom += 4;
-
-    int nTab = pDrawItemStruct->itemID;
-    if (nTab < 0)
+    int num_tab = dis->itemID;
+    if (num_tab < 0)
     {
         return;
     }
-    bool isSelected = (nTab == ::SendMessage(m_hwnd, TCM_GETCURSEL, 0, 0));
+    bool isSelected = (num_tab == ::SendMessage(m_hwnd, TCM_GETCURSEL, 0, 0));
 
     char label[64];
     char *plabel = nullptr;
@@ -214,14 +211,14 @@ void TabControl::draw_item(DRAWITEMSTRUCT *pDrawItemStruct)
     tci.pszText = label;
     tci.cchTextMax = 63;
 
-    if (!::SendMessage(m_hwnd, TCM_GETITEM, nTab, reinterpret_cast<LPARAM>(&tci)))
+    if (!::SendMessage(m_hwnd, TCM_GETITEM, num_tab, reinterpret_cast<LPARAM>(&tci)))
     {
         ::MessageBox(NULL, "! TCM_GETITEM", "", MB_OK);
         // return ::CallWindowProc(m_default_proc, hwnd, msg, wParam, lParam);
     }
     plabel = tci.pszText;
 
-    HDC hDC = pDrawItemStruct->hDC;
+    HDC hDC = dis->hDC;
 
     int nSavedDC = ::SaveDC(hDC);
 
@@ -300,7 +297,7 @@ void TabControl::draw_item(DRAWITEMSTRUCT *pDrawItemStruct)
     ::RestoreDC(hDC, nSavedDC);
 }
 
-void TabControl::draggingCursor(POINT screenPoint)
+void TabControl::dragging_cursor(POINT screenPoint)
 {
     HWND hWin = ::WindowFromPoint(screenPoint);
     if (m_hwnd == hWin)

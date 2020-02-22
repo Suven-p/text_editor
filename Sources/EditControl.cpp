@@ -1,25 +1,22 @@
 #include "EditControl.hpp"
-#include "Buffer.h"
+#include "Buffer.hpp"
 #include "Os.hpp"
 #include <ShellAPI.h>
 #include <stdexcept>
 #include <string>
 #include <windows.h>
 
-// initialize the static variable
 #ifdef _WIN64
 HINSTANCE EditControl::m_hscintilla = LoadLibrary("sci64\\SciLexer.dll");
 #else
 HINSTANCE EditControl::m_hscintilla = LoadLibrary("sci32\\SciLexer.dll");
 #endif
 int EditControl::m_num_objects = 0;
-UserDefineDialog EditControl::_userDefineDlg;
-
 const int EditControl::m_line_number_margin = 0;
 const int EditControl::m_symbol_margin = 1;
 const int EditControl::m_folder_margin = 2;
 
-/*
+/* Possible values for markers
 SC_MARKNUM_*     | Arrow               Plus/minus           Circle tree                 Box tree
 -------------------------------------------------------------------------------------------------------------
 FOLDEROPEN       | SC_MARK_ARROWDOWN   SC_MARK_MINUS     SC_MARK_CIRCLEMINUS            SC_MARK_BOXMINUS
@@ -31,7 +28,8 @@ FOLDEROPENMID    | SC_MARK_EMPTY       SC_MARK_EMPTY     SC_MARK_CIRCLEMINUSCONN
 FOLDERMIDTAIL    | SC_MARK_EMPTY       SC_MARK_EMPTY     SC_MARK_TCORNERCURVE           SC_MARK_TCORNER
 */
 
-const int EditControl::m_marker_array[][NB_FOLDER_STATE] = {
+//clang-format off
+const int EditControl::m_marker_array[][NUM_FOLDER_STATE] = {
     {SC_MARKNUM_FOLDEROPEN,
      SC_MARKNUM_FOLDER,
      SC_MARKNUM_FOLDERSUB,
@@ -55,6 +53,7 @@ const int EditControl::m_marker_array[][NB_FOLDER_STATE] = {
      SC_MARK_BOXPLUSCONNECTED,
      SC_MARK_BOXMINUSCONNECTED,
      SC_MARK_TCORNER}};
+// clang-format on
 
 void EditControl::init(HINSTANCE hInst, HWND hparent)
 {
@@ -85,11 +84,12 @@ void EditControl::init(HINSTANCE hInst, HWND hparent)
     }
     m_scintilla_function = (SCINTILLA_FUNC)::SendMessage(m_hwnd, SCI_GETDIRECTFUNCTION, 0, 0);
     m_scintilla_pointer = (SCINTILLA_PTR)::SendMessage(m_hwnd, SCI_GETDIRECTPOINTER, 0, 0);
-    _userDefineDlg.init(m_hInstance, m_hparent, this);
     if (!m_scintilla_function || !m_scintilla_pointer)
     {
         throw std::runtime_error("Failed to get direct function to scintilla window.");
     }
+
+    set_cpp_lexer(LangType::L_CPP);
     execute(SCI_SETMARGINMASKN, m_folder_margin, SC_MASK_FOLDERS);
     execute(SCI_SETMARGINWIDTHN, m_folder_margin, 16);
     execute(SCI_SETMARGINSENSITIVEN, m_folder_margin, true);
@@ -98,15 +98,17 @@ void EditControl::init(HINSTANCE hInst, HWND hparent)
     showMargin(m_folder_margin);
     showMargin(m_symbol_margin);
 
-    ::SendMessage(m_hwnd, SCI_SETPROPERTY, (WPARAM) "fold.comment", (LPARAM) "1");
-    /*     execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold"), reinterpret_cast<LPARAM>("1"));
-     execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold.compact"), reinterpret_cast<LPARAM>("1"));
-     execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold.comment"), reinterpret_cast<LPARAM>("1"));
-     execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold.preprocessor"), reinterpret_cast<LPARAM>("1"));
-     execute(SCI_SETFOLDFLAGS, SC_FOLDFLAG_LINEAFTER_CONTRACTED, 0);*/
+    // execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold"), 1);
+    execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold"), reinterpret_cast<LPARAM>("1"));
+    execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold.compact"), reinterpret_cast<LPARAM>("1"));
+    execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold.comment"), reinterpret_cast<LPARAM>("1"));
+    execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold.preprocessor"), reinterpret_cast<LPARAM>("1"));
+    execute(SCI_SETFOLDFLAGS, 16, 0);
     set_marker_style(FolderStyle::FOLDER_STYLE_BOX);
-    execute(SCI_SETAUTOMATICFOLD, SC_AUTOMATICFOLD_CHANGE, 0);
-    set_marker_style(m_folder_style);
+    execute(SCI_SETAUTOMATICFOLD, SC_AUTOMATICFOLD_CHANGE | SC_AUTOMATICFOLD_CLICK | SC_AUTOMATICFOLD_SHOW, 0);
+        // set_marker_style(m_folder_style);
+        for (int i = 0; i < NUM_FOLDER_STATE; i++) define_marker(
+            m_marker_array[int(FolderStyle::FOLDER_TYPE)][i], m_marker_array[int(m_folder_style)][i], black, white);
 };
 
 void EditControl::set_style(int style, COLORREF fore, COLORREF back, int size, const char *font) const
@@ -133,48 +135,24 @@ const char cInstrWords[] = "if else switch case default break goto return for wh
 const char cppInstrWords[] = "new delete throw try catch namespace operator this const_cast static_cast dynamic_cast "
                              "reinterpreter_cast true false null";
 
-const char cTypeWords[] = "void struct union enum char short int long double float signed unsigned const static extern "
-                          "auto register volatile";
-const char cppTypeWords[] = "bool class private protected public friend inline template virtual";
+const char c_types[] = "void struct union enum char short int long double float signed unsigned const static extern "
+                       "auto register volatile";
+const char cpp_types[] = "bool class private protected public friend inline template virtual";
 
 void EditControl::set_cpp_lexer(LangType langauge)
 {
     std::string cppInstrs;
     std::string cppTypes;
-
-    switch (langauge)
-    {
-    case LangType::L_C: {
-        cppInstrs = cInstrWords;
-        cppTypes = cTypeWords;
-        break;
-    }
-
-    case LangType::L_CPP: {
-        cppInstrs = cInstrWords;
-        cppTypes = cTypeWords;
-
-        cppInstrs += " ";
-        cppInstrs += cppInstrWords;
-
-        cppTypes += " ";
-        cppTypes += cppTypeWords;
-        break;
-    }
-
-    default:
-        return;
-    }
+    cppInstrs = cInstrWords + std::string(" ") + cppInstrWords;
+    cppTypes = c_types + std::string(" ") + cpp_types;
 
     execute(SCI_SETLEXER, SCLEX_CPP);
     execute(SCI_SETKEYWORDS, 0, (LPARAM)cppInstrs.c_str());
     execute(SCI_SETKEYWORDS, 1, (LPARAM)cppTypes.c_str());
-
     // Global default style.
     set_style(STYLE_DEFAULT, black, white, 10, "Verdana");
     execute(SCI_STYLECLEARALL, 0, 0); // Copies to all other styles.
 
-    // C Styles.
     set_style(SCE_C_DEFAULT, black, white);                              // 0
     set_style(SCE_C_COMMENT, darkGreen, white, 10, "Comic Sans MS");     // 1
     set_style(SCE_C_COMMENTLINE, darkGreen, white, 10, "Comic Sans MS"); // 2
@@ -182,16 +160,12 @@ void EditControl::set_cpp_lexer(LangType langauge)
     set_style(SCE_C_NUMBER, orange, white, 0, 0);                        // 4
     set_style(SCE_C_WORD, blue, white);                                  // 5
     set_style(SCE_C_WORD2, purple, white);                               // 5
-
     execute(SCI_STYLESETBOLD, SCE_C_WORD, 1);
-    set_style(SCE_C_STRING, grey, white, 0, 0);    // 6
-    set_style(SCE_C_CHARACTER, grey, white, 0, 0); // 7
-
+    set_style(SCE_C_STRING, grey, white, 0, 0);        // 6
+    set_style(SCE_C_CHARACTER, grey, white, 0, 0);     // 7
     set_style(SCE_C_PREPROCESSOR, brown, white, 0, 0); // 9
-
-    set_style(SCE_C_OPERATOR, darkBlue, white, 0, 0); // 10
+    set_style(SCE_C_OPERATOR, darkBlue, white, 0, 0);  // 10
     execute(SCI_STYLESETBOLD, SCE_C_OPERATOR, 1);
-
     // set_style(SCE_C_STRINGEOL, darkBlue, white, 0, 0); //12
     // set_style(SCE_C_COMMENTLINEDOC, darkBlue, white, 0, 0); //15
     // set_style(SCE_C_WORD2, darkBlue, white, 0, 0); //16
@@ -209,7 +183,6 @@ void EditControl::set_document_language(LangType language)
     int selectColorBack = grey;
     switch (language)
     {
-    case LangType::L_C:
     case LangType::L_CPP: {
         set_cpp_lexer(language);
         break;
@@ -222,35 +195,33 @@ void EditControl::set_document_language(LangType language)
     set_style(STYLE_INDENTGUIDE, liteGrey);
     set_style(STYLE_CONTROLCHAR, liteGrey, red);
     set_style(STYLE_BRACELIGHT, blue, yellow);
-    setCaretColorWidth(caretColor, caretWidth);
-    setSelectionColor(selectColorFore, selectColorBack);
+    set_caret_color_width(caretColor, caretWidth);
+    set_selection_color(selectColorFore, selectColorBack);
     execute(SCI_COLOURISE, 0, -1);
 }
 
-char *EditControl::attatchDefaultDoc(int nb)
+char *EditControl::attach_default_doc(int num)
 {
-    char title[10];
-    char nb_str[4];
-    strcat(strcpy(title, UNTITLED_STR), _itoa(nb, nb_str, 10));
+    std::string title;
+    title = UNTITLED_STR + std::to_string(num);
 
     // get the doc pointer attached (by default) on the view Scintilla
     Document doc = execute(SCI_GETDOCPOINTER, 0, 0);
 
     // create the entry for our list
-    m_buffer_array.push_back(Buffer(doc, title));
+    m_buffer_array.push_back(Buffer(doc, title.c_str()));
 
     // set current index to 0
     m_current_index = 0;
-    // execute(SCI_SETSAVEPOINT);
     return m_buffer_array[m_current_index].m_full_path;
 }
 
-int EditControl::findDocIndexByName(const char *fn) const
+int EditControl::get_index(const std::string &file_name) const
 {
     int index = -1;
-    for (int i = 0; i < int(m_buffer_array.size()); i++)
+    for (size_t size = m_buffer_array.size(), i = 0; i < size; i++)
     {
-        if (!strcmp(m_buffer_array[i].m_full_path, fn))
+        if (m_buffer_array[i].m_full_path == file_name)
         {
             index = i;
             break;
@@ -285,7 +256,7 @@ char *EditControl::activate_document(int index)
 
     restore_current_pos(prevDocPos);
 
-    // execute(SCI_SETREADONLY, isCurrentBufReadOnly());
+    // execute(SCI_SETREADONLY, is_current_buf_read_only());
 
     return m_buffer_array[m_current_index].m_full_path;
 }
@@ -293,86 +264,65 @@ char *EditControl::activate_document(int index)
 // this method creates a new doc ,and adds it into
 // the end of the doc list and a last sub tab, then activate it
 // it returns the name of this created doc (that's the current doc also)
-char *EditControl::create(const char *fn)
+char *EditControl::create(std::string file_name)
 {
-    Document newDoc = execute(SCI_CREATEDOCUMENT);
-    m_buffer_array.push_back(Buffer(newDoc, fn));
+    Document new_doc = execute(SCI_CREATEDOCUMENT);
+    m_buffer_array.push_back(Buffer(new_doc, file_name.c_str()));
     m_buffer_array[m_buffer_array.size() - 1].is_file_read_only();
     return activate_document(int(m_buffer_array.size()) - 1);
 }
 
-char *EditControl::create(int nbNew)
+char *EditControl::create(int num_new)
 {
     char title[10];
     char nb[4];
-    strcat(strcpy(title, UNTITLED_STR), _itoa(nbNew, nb, 10));
+    strcat(strcpy(title, UNTITLED_STR), _itoa(num_new, nb, 10));
     return create(title);
 }
 
 // return the index to close then (argument) the index to activate
-int EditControl::closeCurrentDoc(int &i2Activate)
+int EditControl::close_current(int &to_activate)
 {
-    int oldCurrent = m_current_index;
-
-    // if the file 2 delete is the last one
+    int old = m_current_index;
     if (m_current_index == m_buffer_array.size() - 1)
     {
-        // if current index is 0, ie. the current is the only one
-        if (!m_current_index)
+        if (m_current_index)
         {
-            m_current_index = 0;
-        }
-        // the current is NOT the only one and it is the last one,
-        // we set it to the index which precedes it
-        else
             m_current_index -= 1;
+        }
     }
-    // else the next current index will be the same,
-    // we do nothing
-
-    // get the iterator and calculate its position with the old current index value
-    BUFFER_ARRAY::iterator posIt = m_buffer_array.begin() + oldCurrent;
 
     // erase the position given document from our list
-    m_buffer_array.erase(posIt);
+    m_buffer_array.erase(m_buffer_array.begin() + old);
 
-    // set another document, so the ref count of old active document owned
-    // by Scintilla view will be decreased to 0 by SCI_SETDOCPOINTER message
+    // Ref count of closed document owned by Scintilla will be decreased to 0 by SCI_SETDOCPOINTER message
     execute(SCI_SETDOCPOINTER, 0, m_buffer_array[m_current_index].m_doc);
-
     set_document_language(m_buffer_array[m_current_index].m_language);
+    to_activate = m_current_index;
 
-    i2Activate = m_current_index;
-
-    return oldCurrent;
+    return old;
 }
 
-void EditControl::closeDocAt(int i2Close)
+void EditControl::close_at(int index)
 {
-    execute(SCI_RELEASEDOCUMENT, 0, m_buffer_array[i2Close].m_doc);
-
-    // get the iterator and calculate its position with the old current index value
-    BUFFER_ARRAY::iterator posIt = m_buffer_array.begin() + i2Close;
-
-    // erase the position given document from our list
-    m_buffer_array.erase(posIt);
-
-    m_current_index -= (i2Close < m_current_index) ? 1 : 0;
+    execute(SCI_RELEASEDOCUMENT, 0, m_buffer_array[index].m_doc);
+    m_buffer_array.erase(m_buffer_array.begin() + index);
+    m_current_index -= (index < m_current_index) ? 1 : 0;
 }
 
-void EditControl::removeAllUnusedDocs()
+void EditControl::remove_all_docs()
 {
-    // unreference all docs  from list of Scintilla
-    // by sending SCI_RELEASEDOCUMENT message
-    for (int i = 0; i < int(m_buffer_array.size()); i++)
+    for (size_t i = 0, size = m_buffer_array.size(); i < size; i++)
+    {
         if (i != m_current_index)
+        {
             execute(SCI_RELEASEDOCUMENT, 0, m_buffer_array[i].m_doc);
-
-    // remove all docs except the current doc from list
+        }
+    }
     m_buffer_array.clear();
 }
 
-void EditControl::getText(char *dest, int start, int end)
+void EditControl::get_text(char *dest, int start, int end)
 {
     Sci_TextRange tr;
     tr.chrg.cpMin = start;
@@ -381,37 +331,37 @@ void EditControl::getText(char *dest, int start, int end)
     execute(SCI_GETTEXTRANGE, 0, reinterpret_cast<LPARAM>(&tr));
 }
 
-void EditControl::marginClick(int position, int modifiers)
+void EditControl::margin_click(int position, int modifiers)
 {
-    int lineClick = int(execute(SCI_LINEFROMPOSITION, position, 0));
-    int levelClick = int(execute(SCI_GETFOLDLEVEL, lineClick, 0));
-    if (levelClick & SC_FOLDLEVELHEADERFLAG)
+    int line = int(execute(SCI_LINEFROMPOSITION, position, 0));
+    int level = int(execute(SCI_GETFOLDLEVEL, line, 0));
+    if (level & SC_FOLDLEVELHEADERFLAG)
     {
         if (modifiers & SCMOD_SHIFT)
         {
             // Ensure all children visible
-            execute(SCI_SETFOLDEXPANDED, lineClick, 1);
-            expand(lineClick, true, true, 100, levelClick);
+            execute(SCI_SETFOLDEXPANDED, line, 1);
+            expand(line, true, true, 100, level);
         }
         else if (modifiers & SCMOD_CTRL)
         {
-            if (execute(SCI_GETFOLDEXPANDED, lineClick, 0))
+            if (execute(SCI_GETFOLDEXPANDED, line, 0))
             {
                 // Contract this line and all children
-                execute(SCI_SETFOLDEXPANDED, lineClick, 0);
-                expand(lineClick, false, true, 0, levelClick);
+                execute(SCI_SETFOLDEXPANDED, line, 0);
+                expand(line, false, true, 0, level);
             }
             else
             {
                 // Expand this line and all children
-                execute(SCI_SETFOLDEXPANDED, lineClick, 1);
-                expand(lineClick, true, true, 100, levelClick);
+                execute(SCI_SETFOLDEXPANDED, line, 1);
+                expand(line, true, true, 100, level);
             }
         }
         else
         {
             // Toggle this line
-            execute(SCI_TOGGLEFOLD, lineClick, 0);
+            execute(SCI_TOGGLEFOLD, line, 0);
         }
     }
 }
