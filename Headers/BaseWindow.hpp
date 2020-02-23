@@ -1,7 +1,5 @@
 #pragma once
-
 #include "Os.hpp"
-
 namespace Os
 {
 class BaseWindow

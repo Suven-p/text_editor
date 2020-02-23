@@ -34,14 +34,14 @@ class Buffer
         m_pos.end_pos = 0;
         set_file_name(fileName);
     };
-    Buffer(const Buffer &buf)
+    Buffer(const Buffer& buf)
         : m_is_dirty(buf.m_is_dirty), m_doc(buf.m_doc), m_language(buf.m_language), m_is_read_only(buf.m_is_read_only),
           m_pos(buf.m_pos)
     {
         m_full_path = new char[MAX_PATH];
         strcpy(m_full_path, buf.m_full_path);
     };
-    Buffer &operator=(const Buffer &buf)
+    Buffer& operator=(const Buffer& buf)
     {
         if (this != &buf)
         {
@@ -85,6 +85,7 @@ class Buffer
             delete[] m_full_path;
         }
     }
+    // TODO: Add txt file
     void set_file_name(const char *fn)
     {
         strcpy(m_full_path, fn);
@@ -118,7 +119,7 @@ class Buffer
 
   private:
     // TODO: convert file path to wchar
-    char *m_full_path{nullptr};
+    char* m_full_path{nullptr};
     bool m_is_dirty;
     Document m_doc;
     LangType m_language;

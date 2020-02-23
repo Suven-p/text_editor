@@ -123,8 +123,72 @@ void Os::MainWindow::notify(SCNotification *notification)
         break;
         return;
     }
+    case SCN_CHARADDED: {
+        switch (static_cast<char>(notification->ch))
+        {
+        case '<': {
+            int pos = sce1.execute(SCI_GETCURRENTPOS, 0, 0);
+            char to_insert[] = ">";
+            sce1.execute(SCI_ADDTEXT, strlen(to_insert), (LPARAM)to_insert);
+            sce1.execute(SCI_GOTOPOS, pos);
+            break;
+        }
+        case '[': {
+            int pos = sce1.execute(SCI_GETCURRENTPOS, 0, 0);
+            char to_insert[] = "]";
+            sce1.execute(SCI_ADDTEXT, strlen(to_insert), (LPARAM)to_insert);
+            sce1.execute(SCI_GOTOPOS, pos);
+            break;
+        }
+        case '(': {
+            int pos = sce1.execute(SCI_GETCURRENTPOS, 0, 0);
+            char to_insert[] = ")";
+            sce1.execute(SCI_ADDTEXT, strlen(to_insert), (LPARAM)to_insert);
+            sce1.execute(SCI_GOTOPOS, pos);
+            break;
+        }
+        case '{': {
+            int pos = sce1.execute(SCI_GETCURRENTPOS, 0, 0);
+            char to_insert[] = "\n\t\n}";
+            sce1.execute(SCI_ADDTEXT, strlen(to_insert), (LPARAM)to_insert);
+            sce1.execute(SCI_GOTOPOS, pos + 2);
+            break;
+        }
+        default:
+            break;
+        }
+
+        break;
+    }
+    case SCN_UPDATEUI: {
+        if (notification->updated == SC_UPDATE_SELECTION)
+        {
+            static int brace1 = 0, brace2 = 0;
+            int pos = sce1.execute(SCI_GETCURRENTPOS, 0, 0);
+            char ch = static_cast<char>(sce1.execute(SCI_GETCHARAT, pos));
+            if (ch == '(' || ch == '{' || ch == '[' || ch == '<')
+            {
+                int other_brace = sce1.execute(SCI_BRACEMATCH, pos);
+                if (other_brace != -1 && (other_brace - pos) > 1)
+                {
+                    sce1.execute(SCI_BRACEHIGHLIGHT, pos, other_brace);
+                }
+            }
+            else if (ch == ')' || ch == '}' || ch == ']' || ch == '>')
+            {
+                int other_brace = sce1.execute(SCI_BRACEMATCH, pos);
+                if (other_brace != -1 && (pos - other_brace) > 1)
+                {
+                    sce1.execute(SCI_BRACEHIGHLIGHT, other_brace, pos);
+                }
+            }
+            else
+            {
+                sce1.execute(SCI_BRACEHIGHLIGHT, -1, -1);
+            }
+        }
+    }
     default:
         break;
-    }// End of switch
-
+    } // End of switch
 }

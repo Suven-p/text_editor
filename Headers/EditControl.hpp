@@ -15,13 +15,8 @@ using SCINTILLA_PTR = void *;
 using BUFFER_ARRAY = std::vector<Buffer>;
 using CHARACTER_RANGE = Sci_CharacterRange;
 
-#define DEF_SCINTILLA            1000;
-#define WM_DOCK_USERDEFINE_DLG   (WM_USER + DEF_SCINTILLA + 1)
-#define WM_UNDOCK_USERDEFINE_DLG (WM_USER + DEF_SCINTILLA + 2)
-#define WM_CLOSE_USERDEFINE_DLG  (WM_USER + DEF_SCINTILLA + 3)
-
 #define LINEDRAW_FONT "LINEDRAW.TTF"
-const int NUM_FOLDER_STATE = 7;
+constexpr int NUM_FOLDER_STATE = 7;
 
 enum class FolderStyle
 {
@@ -35,10 +30,6 @@ enum class FolderStyle
 class EditControl : public Os::BaseWindow
 {
   public:
-    // Margins
-    static const int m_line_number_margin;
-    static const int m_symbol_margin;
-    static const int m_folder_margin;
     EditControl()
         : BaseWindow(), m_scintilla_function(NULL), m_scintilla_pointer(NULL), m_current_index(0), _MSLineDrawFont(0),
           m_folder_style(FolderStyle::FOLDER_STYLE_BOX)
@@ -69,7 +60,6 @@ class EditControl : public Os::BaseWindow
         return m_scintilla_function(
             m_scintilla_pointer, static_cast<int>(Msg), static_cast<int>(wParam), static_cast<int>(lParam));
     };
-
     void set_document_language(LangType language);
     char *attach_default_doc(int num);
     int get_index(const std::string &file_name) const;
@@ -84,16 +74,12 @@ class EditControl : public Os::BaseWindow
     {
         return m_buffer_array[m_current_index].m_full_path;
     }
-    int set_title(std::string file_name)
-    {
-        m_buffer_array[m_current_index].set_file_name(file_name.c_str());
-        set_document_language(m_buffer_array[m_current_index].m_language);
-        return m_current_index;
-    }
+    int set_title(std::string file_name);
     int close_current(int &to_activate);
     void close_at(int index);
     void remove_all_docs();
     void get_text(char *dest, int start, int end);
+    int EditControl::get_line_at(int num_line, char *buf, bool keep_EOL);
     void set_state(bool is_dirty)
     {
         m_buffer_array[m_current_index].m_is_dirty = is_dirty;
@@ -116,9 +102,11 @@ class EditControl : public Os::BaseWindow
     }
     bool is_all_docs_clean() const
     {
-        for (int i = 0; i < static_cast<int>(m_buffer_array.size()); i++)
-            if (m_buffer_array[i].m_is_dirty)
+        for (auto buffer : m_buffer_array)
+        {
+            if (buffer.m_is_dirty)
                 return false;
+        }
         return true;
     }
     int get_num_docs() const
@@ -127,9 +115,8 @@ class EditControl : public Os::BaseWindow
     }
     void save_current_pos()
     {
-        int topLine = static_cast<int>(execute(SCI_GETFIRSTVISIBLELINE));
-        m_buffer_array[m_current_index].m_pos.first_line = topLine;
-
+        int top_line = static_cast<int>(execute(SCI_GETFIRSTVISIBLELINE));
+        m_buffer_array[m_current_index].m_pos.first_line = top_line;
         m_buffer_array[m_current_index].m_pos.start_pos = int(execute(SCI_GETSELECTIONSTART));
         m_buffer_array[m_current_index].m_pos.end_pos = int(execute(SCI_GETSELECTIONEND));
     }
@@ -137,7 +124,6 @@ class EditControl : public Os::BaseWindow
     {
         int scroll_to_top = 0 - (int(execute(SCI_GETLINECOUNT)) + 1);
         execute(SCI_LINESCROLL, 0, scroll_to_top);
-
         execute(SCI_LINESCROLL, 0, m_buffer_array[m_current_index].m_pos.first_line);
         execute(SCI_SETSELECTIONSTART, m_buffer_array[m_current_index].m_pos.start_pos);
         execute(SCI_SETSELECTIONEND, m_buffer_array[m_current_index].m_pos.end_pos);
@@ -148,15 +134,6 @@ class EditControl : public Os::BaseWindow
             throw std::range_error("Invalid value for index. Index requested\
 				is greater than number of buffers.");
         return m_buffer_array[index];
-    }
-    int get_line_at(int num_line, char *buf, bool keep_EOL)
-    {
-        int num_char = int(execute(SCI_LINELENGTH, num_line));
-        execute(SCI_GETLINE, num_line, (LPARAM)buf);
-        if (!keep_EOL)
-            num_char -= 2;
-        buf[num_char] = '\0';
-        return num_char;
     }
     int get_current_len() const
     {
@@ -192,7 +169,10 @@ class EditControl : public Os::BaseWindow
     {
         return get_buffer(m_current_index);
     };
-    
+
+    static const int m_line_number_margin;
+    static const int m_symbol_margin;
+    static const int m_folder_margin;
     void showMargin(int margin, bool is_shown = true)
     {
         execute(SCI_SETMARGINWIDTHN, margin, is_shown ? ((margin == m_line_number_margin) ? 32 : 16) : 0);
@@ -250,26 +230,26 @@ class EditControl : public Os::BaseWindow
         }
     }
 
-      private:
-        static HINSTANCE m_hscintilla;
-        // Keep track of number of objects. Handle to scintilla.dll will be freed if number of objects reaches zero
-        static int m_num_objects;
-        static const int m_marker_array[][NUM_FOLDER_STATE];
-        FolderStyle m_folder_style;
-        SCINTILLA_FUNC m_scintilla_function;
-        SCINTILLA_PTR m_scintilla_pointer;
-        BUFFER_ARRAY m_buffer_array;
-        // For the file info
-        int _MSLineDrawFont;
-        int m_current_index;
-        void set_style(int style, COLORREF fore, COLORREF back = white, int size = -1, const char *font_name = 0) const;
-        void set_font(int style, const char *font_name, bool is_bold = false, bool is_italic = false) const;
-        void set_cpp_lexer(LangType type);
-        void define_marker(int marker, int markerType, COLORREF fore, COLORREF back)
-        {
-            execute(SCI_MARKERDEFINE, marker, markerType);
-            execute(SCI_MARKERSETFORE, marker, fore);
-            execute(SCI_MARKERSETBACK, marker, back);
-        };
-        void expand(int &line, bool expand, bool force = false, int visLevels = 0, int level = -1);
+  private:
+    static HINSTANCE m_hscintilla;
+    // Keep track of number of objects. Handle to scintilla.dll will be freed if number of objects reaches zero
+    static int m_num_objects;
+    static const int m_marker_array[][NUM_FOLDER_STATE];
+    FolderStyle m_folder_style;
+    SCINTILLA_FUNC m_scintilla_function;
+    SCINTILLA_PTR m_scintilla_pointer;
+    BUFFER_ARRAY m_buffer_array;
+    // For the file info
+    int _MSLineDrawFont;
+    int m_current_index;
+    void set_style(int style, COLORREF fore, COLORREF back = white, int size = -1, const char *font_name = 0) const;
+    void set_font(int style, const char *font_name, bool is_bold = false, bool is_italic = false) const;
+    void set_cpp_lexer(LangType type);
+    void define_marker(int marker, int markerType, COLORREF fore, COLORREF back)
+    {
+        execute(SCI_MARKERDEFINE, marker, markerType);
+        execute(SCI_MARKERSETFORE, marker, fore);
+        execute(SCI_MARKERSETBACK, marker, back);
     };
+    void expand(int &line, bool expand, bool force = false, int visLevels = 0, int level = -1);
+};

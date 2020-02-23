@@ -106,9 +106,10 @@ void EditControl::init(HINSTANCE hInst, HWND hparent)
     execute(SCI_SETFOLDFLAGS, 16, 0);
     set_marker_style(FolderStyle::FOLDER_STYLE_BOX);
     execute(SCI_SETAUTOMATICFOLD, SC_AUTOMATICFOLD_CHANGE | SC_AUTOMATICFOLD_CLICK | SC_AUTOMATICFOLD_SHOW, 0);
-        // set_marker_style(m_folder_style);
-        for (int i = 0; i < NUM_FOLDER_STATE; i++) define_marker(
-            m_marker_array[int(FolderStyle::FOLDER_TYPE)][i], m_marker_array[int(m_folder_style)][i], black, white);
+    set_marker_style(m_folder_style);
+    for (int i = 0; i < NUM_FOLDER_STATE; i++)
+        define_marker(
+            m_marker_array[int(FolderStyle::FOLDER_TYPE)][i], m_marker_array[int(m_folder_style)][i], white, black);
 };
 
 void EditControl::set_style(int style, COLORREF fore, COLORREF back, int size, const char *font) const
@@ -280,6 +281,13 @@ char *EditControl::create(int num_new)
     return create(title);
 }
 
+int EditControl::set_title(std::string file_name)
+{
+    m_buffer_array[m_current_index].set_file_name(file_name.c_str());
+    set_document_language(m_buffer_array[m_current_index].m_language);
+    return m_current_index;
+}
+
 // return the index to close then (argument) the index to activate
 int EditControl::close_current(int &to_activate)
 {
@@ -330,7 +338,15 @@ void EditControl::get_text(char *dest, int start, int end)
     tr.lpstrText = dest;
     execute(SCI_GETTEXTRANGE, 0, reinterpret_cast<LPARAM>(&tr));
 }
-
+int EditControl::get_line_at(int num_line, char *buf, bool keep_EOL)
+{
+    int num_char = int(execute(SCI_LINELENGTH, num_line));
+    execute(SCI_GETLINE, num_line, (LPARAM)buf);
+    if (!keep_EOL)
+        num_char -= 2;
+    buf[num_char] = '\0';
+    return num_char;
+}
 void EditControl::margin_click(int position, int modifiers)
 {
     int line = int(execute(SCI_LINEFROMPOSITION, position, 0));
