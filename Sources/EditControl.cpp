@@ -15,6 +15,7 @@ int EditControl::m_num_objects = 0;
 const int EditControl::m_line_number_margin = 0;
 const int EditControl::m_symbol_margin = 1;
 const int EditControl::m_folder_margin = 2;
+int EditControl::indent_len = 4;
 
 /* Possible values for markers
 SC_MARKNUM_*     | Arrow               Plus/minus           Circle tree                 Box tree
@@ -28,31 +29,13 @@ FOLDEROPENMID    | SC_MARK_EMPTY       SC_MARK_EMPTY     SC_MARK_CIRCLEMINUSCONN
 FOLDERMIDTAIL    | SC_MARK_EMPTY       SC_MARK_EMPTY     SC_MARK_TCORNERCURVE           SC_MARK_TCORNER
 */
 
-//clang-format off
+// clang-format off
 const int EditControl::m_marker_array[][NUM_FOLDER_STATE] = {
-    {SC_MARKNUM_FOLDEROPEN,
-     SC_MARKNUM_FOLDER,
-     SC_MARKNUM_FOLDERSUB,
-     SC_MARKNUM_FOLDERTAIL,
-     SC_MARKNUM_FOLDEREND,
-     SC_MARKNUM_FOLDEROPENMID,
-     SC_MARKNUM_FOLDERMIDTAIL},
+    {SC_MARKNUM_FOLDEROPEN, SC_MARKNUM_FOLDER, SC_MARKNUM_FOLDERSUB, SC_MARKNUM_FOLDERTAIL, SC_MARKNUM_FOLDEREND, SC_MARKNUM_FOLDEROPENMID,         SC_MARKNUM_FOLDERMIDTAIL},
     {SC_MARK_MINUS, SC_MARK_PLUS, SC_MARK_EMPTY, SC_MARK_EMPTY, SC_MARK_EMPTY, SC_MARK_EMPTY, SC_MARK_EMPTY},
     {SC_MARK_ARROWDOWN, SC_MARK_ARROW, SC_MARK_EMPTY, SC_MARK_EMPTY, SC_MARK_EMPTY, SC_MARK_EMPTY, SC_MARK_EMPTY},
-    {SC_MARK_CIRCLEMINUS,
-     SC_MARK_CIRCLEPLUS,
-     SC_MARK_VLINE,
-     SC_MARK_LCORNERCURVE,
-     SC_MARK_CIRCLEPLUSCONNECTED,
-     SC_MARK_CIRCLEMINUSCONNECTED,
-     SC_MARK_TCORNERCURVE},
-    {SC_MARK_BOXMINUS,
-     SC_MARK_BOXPLUS,
-     SC_MARK_VLINE,
-     SC_MARK_LCORNER,
-     SC_MARK_BOXPLUSCONNECTED,
-     SC_MARK_BOXMINUSCONNECTED,
-     SC_MARK_TCORNER}};
+    {SC_MARK_CIRCLEMINUS, SC_MARK_CIRCLEPLUS, SC_MARK_VLINE, SC_MARK_LCORNERCURVE, SC_MARK_CIRCLEPLUSCONNECTED, SC_MARK_CIRCLEMINUSCONNECTED,       SC_MARK_TCORNERCURVE},
+    {SC_MARK_BOXMINUS, SC_MARK_BOXPLUS, SC_MARK_VLINE, SC_MARK_LCORNER, SC_MARK_BOXPLUSCONNECTED, SC_MARK_BOXMINUSCONNECTED, SC_MARK_TCORNER}};
 // clang-format on
 
 void EditControl::init(HINSTANCE hInst, HWND hparent)
@@ -94,6 +77,8 @@ void EditControl::init(HINSTANCE hInst, HWND hparent)
     execute(SCI_SETMARGINWIDTHN, m_folder_margin, 16);
     execute(SCI_SETMARGINSENSITIVEN, m_folder_margin, true);
     execute(SCI_SETMARGINSENSITIVEN, m_symbol_margin, true);
+    execute(SCI_SETTABWIDTH, 4);
+    execute(SCI_SETINDENT, 0);
     showMargin(m_line_number_margin);
     showMargin(m_folder_margin);
     showMargin(m_symbol_margin);
@@ -108,11 +93,13 @@ void EditControl::init(HINSTANCE hInst, HWND hparent)
     execute(SCI_SETAUTOMATICFOLD, SC_AUTOMATICFOLD_CHANGE | SC_AUTOMATICFOLD_CLICK | SC_AUTOMATICFOLD_SHOW, 0);
     set_marker_style(m_folder_style);
     for (int i = 0; i < NUM_FOLDER_STATE; i++)
-        define_marker(
-            m_marker_array[int(FolderStyle::FOLDER_TYPE)][i], m_marker_array[int(m_folder_style)][i], white, black);
+        define_marker(m_marker_array[int(FolderStyle::FOLDER_TYPE)][i],
+                      m_marker_array[int(m_folder_style)][i],
+                      white,
+                      black);
 };
 
-void EditControl::set_style(int style, COLORREF fore, COLORREF back, int size, const char *font) const
+void EditControl::set_style(int style, COLORREF fore, COLORREF back, int size, const char* font) const
 {
     execute(SCI_STYLESETFORE, style, fore);
     execute(SCI_STYLESETBACK, style, back);
@@ -122,7 +109,7 @@ void EditControl::set_style(int style, COLORREF fore, COLORREF back, int size, c
         execute(SCI_STYLESETFONT, style, reinterpret_cast<LPARAM>(font));
 }
 
-void EditControl::set_font(int style, const char *font, bool is_bold, bool is_italic) const
+void EditControl::set_font(int style, const char* font, bool is_bold, bool is_italic) const
 {
     if ((!font) || (strcmp(font, "")))
         execute(SCI_STYLESETFONT, (WPARAM)style, (LPARAM)font);
@@ -201,7 +188,7 @@ void EditControl::set_document_language(LangType language)
     execute(SCI_COLOURISE, 0, -1);
 }
 
-char *EditControl::attach_default_doc(int num)
+char* EditControl::attach_default_doc(int num)
 {
     std::string title;
     title = UNTITLED_STR + std::to_string(num);
@@ -217,7 +204,7 @@ char *EditControl::attach_default_doc(int num)
     return m_buffer_array[m_current_index].m_full_path;
 }
 
-int EditControl::get_index(const std::string &file_name) const
+int EditControl::get_index(const std::string& file_name) const
 {
     int index = -1;
     for (size_t size = m_buffer_array.size(), i = 0; i < size; i++)
@@ -233,12 +220,12 @@ int EditControl::get_index(const std::string &file_name) const
 
 //! \brief this method activates the doc and the corresponding sub tab
 //! \brief return the index of previeus current doc
-char *EditControl::activate_document(int index)
+char* EditControl::activate_document(int index)
 {
     // before activating another document, we get the current position
     // from the Scintilla view then save it to the current document
     save_current_pos();
-    Position &prevDocPos = m_buffer_array[m_current_index].m_pos;
+    Position& prevDocPos = m_buffer_array[m_current_index].m_pos;
 
     // increase current doc ref count to 2
     execute(SCI_ADDREFDOCUMENT, 0, m_buffer_array[m_current_index].m_doc);
@@ -265,7 +252,7 @@ char *EditControl::activate_document(int index)
 // this method creates a new doc ,and adds it into
 // the end of the doc list and a last sub tab, then activate it
 // it returns the name of this created doc (that's the current doc also)
-char *EditControl::create(std::string file_name)
+char* EditControl::create(std::string file_name)
 {
     Document new_doc = execute(SCI_CREATEDOCUMENT);
     m_buffer_array.push_back(Buffer(new_doc, file_name.c_str()));
@@ -273,7 +260,7 @@ char *EditControl::create(std::string file_name)
     return activate_document(int(m_buffer_array.size()) - 1);
 }
 
-char *EditControl::create(int num_new)
+char* EditControl::create(int num_new)
 {
     char title[10];
     char nb[4];
@@ -289,7 +276,7 @@ int EditControl::set_title(std::string file_name)
 }
 
 // return the index to close then (argument) the index to activate
-int EditControl::close_current(int &to_activate)
+int EditControl::close_current(int& to_activate)
 {
     int old = m_current_index;
     if (m_current_index == m_buffer_array.size() - 1)
@@ -330,7 +317,7 @@ void EditControl::remove_all_docs()
     m_buffer_array.clear();
 }
 
-void EditControl::get_text(char *dest, int start, int end)
+void EditControl::get_text(char* dest, int start, int end)
 {
     Sci_TextRange tr;
     tr.chrg.cpMin = start;
@@ -338,7 +325,7 @@ void EditControl::get_text(char *dest, int start, int end)
     tr.lpstrText = dest;
     execute(SCI_GETTEXTRANGE, 0, reinterpret_cast<LPARAM>(&tr));
 }
-int EditControl::get_line_at(int num_line, char *buf, bool keep_EOL)
+int EditControl::get_line_at(int num_line, char* buf, bool keep_EOL)
 {
     int num_char = int(execute(SCI_LINELENGTH, num_line));
     execute(SCI_GETLINE, num_line, (LPARAM)buf);
@@ -382,7 +369,7 @@ void EditControl::margin_click(int position, int modifiers)
     }
 }
 
-void EditControl::expand(int &line, bool doExpand, bool force, int visLevels, int level)
+void EditControl::expand(int& line, bool doExpand, bool force, int visLevels, int level)
 {
     int lineMaxSubord = int(execute(SCI_GETLASTCHILD, line, level & SC_FOLDLEVELNUMBERMASK));
     line++;

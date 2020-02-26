@@ -54,7 +54,7 @@ class Buffer
         }
         return *this;
     }
-    Buffer(Buffer &&buf) noexcept
+    Buffer(Buffer&& buf) noexcept
         : m_is_dirty(std::move(buf.m_is_dirty)), m_doc(std::move(buf.m_doc)),
           m_is_read_only(std::move(buf.m_is_read_only)), m_pos(std::move(buf.m_pos))
     {
@@ -62,7 +62,7 @@ class Buffer
         m_full_path = buf.m_full_path;
         buf.m_full_path = nullptr;
     }
-    Buffer &operator=(Buffer &&buf) noexcept
+    Buffer& operator=(Buffer&& buf) noexcept
     {
         if (this != &buf)
         {
@@ -85,8 +85,8 @@ class Buffer
             delete[] m_full_path;
         }
     }
-    // TODO: Add txt file
-    void set_file_name(const char *fn)
+    // TODO: Add support other file extension
+    void set_file_name(const char* fn)
     {
         strcpy(m_full_path, fn);
         m_language = LangType::L_CPP;

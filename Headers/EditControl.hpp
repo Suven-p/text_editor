@@ -10,8 +10,8 @@
 #include <string>
 #include <vector>
 
-using SCINTILLA_FUNC = int(__cdecl *)(void *, int, int, int);
-using SCINTILLA_PTR = void *;
+using SCINTILLA_FUNC = int(__cdecl*)(void*, int, int, int);
+using SCINTILLA_PTR = void*;
 using BUFFER_ARRAY = std::vector<Buffer>;
 using CHARACTER_RANGE = Sci_CharacterRange;
 
@@ -57,29 +57,31 @@ class EditControl : public Os::BaseWindow
     virtual void init(HINSTANCE hInst, HWND hParent);
     LRESULT execute(UINT Msg, WPARAM wParam = 0, LPARAM lParam = 0) const
     {
-        return m_scintilla_function(
-            m_scintilla_pointer, static_cast<int>(Msg), static_cast<int>(wParam), static_cast<int>(lParam));
+        return m_scintilla_function(m_scintilla_pointer,
+                                    static_cast<int>(Msg),
+                                    static_cast<int>(wParam),
+                                    static_cast<int>(lParam));
     };
     void set_document_language(LangType language);
-    char *attach_default_doc(int num);
-    int get_index(const std::string &file_name) const;
-    char *activate_document(int index);
-    char *create(std::string file_name);
-    char *create(int num_new);
+    char* attach_default_doc(int num);
+    int get_index(const std::string& file_name) const;
+    char* activate_document(int index);
+    char* create(std::string file_name);
+    char* create(int num_new);
     int get_current_index() const
     {
         return m_current_index;
     }
-    const char *get_current_title() const
+    const char* get_current_title() const
     {
         return m_buffer_array[m_current_index].m_full_path;
     }
     int set_title(std::string file_name);
-    int close_current(int &to_activate);
+    int close_current(int& to_activate);
     void close_at(int index);
     void remove_all_docs();
-    void get_text(char *dest, int start, int end);
-    int EditControl::get_line_at(int num_line, char *buf, bool keep_EOL);
+    void get_text(char* dest, int start, int end);
+    int EditControl::get_line_at(int num_line, char* buf, bool keep_EOL);
     void set_state(bool is_dirty)
     {
         m_buffer_array[m_current_index].m_is_dirty = is_dirty;
@@ -120,7 +122,7 @@ class EditControl : public Os::BaseWindow
         m_buffer_array[m_current_index].m_pos.start_pos = int(execute(SCI_GETSELECTIONSTART));
         m_buffer_array[m_current_index].m_pos.end_pos = int(execute(SCI_GETSELECTIONEND));
     }
-    void restore_current_pos(const Position &prev_pos)
+    void restore_current_pos(const Position& prev_pos)
     {
         int scroll_to_top = 0 - (int(execute(SCI_GETLINECOUNT)) + 1);
         execute(SCI_LINESCROLL, 0, scroll_to_top);
@@ -128,7 +130,7 @@ class EditControl : public Os::BaseWindow
         execute(SCI_SETSELECTIONSTART, m_buffer_array[m_current_index].m_pos.start_pos);
         execute(SCI_SETSELECTIONEND, m_buffer_array[m_current_index].m_pos.end_pos);
     }
-    Buffer &get_buffer(int index)
+    Buffer& get_buffer(int index)
     {
         if (index >= int(m_buffer_array.size()))
             throw std::range_error("Invalid value for index. Index requested\
@@ -160,12 +162,12 @@ class EditControl : public Os::BaseWindow
         execute(SCI_SETSELFORE, 1, fore);
         execute(SCI_SETSELBACK, 1, back);
     };
-    int add_buffer(Buffer &buffer)
+    int add_buffer(Buffer& buffer)
     {
         m_buffer_array.push_back(buffer);
         return (int(m_buffer_array.size()) - 1);
     };
-    Buffer &get_current_buffer()
+    Buffer& get_current_buffer()
     {
         return get_buffer(m_current_index);
     };
@@ -188,8 +190,10 @@ class EditControl : public Os::BaseWindow
             return;
         m_folder_style = style;
         for (int i = 0; i < NUM_FOLDER_STATE; i++)
-            define_marker(
-                m_marker_array[int(FolderStyle::FOLDER_TYPE)][i], m_marker_array[int(style)][i], white, black);
+            define_marker(m_marker_array[int(FolderStyle::FOLDER_TYPE)][i],
+                          m_marker_array[int(style)][i],
+                          white,
+                          black);
     }
     FolderStyle get_folder_style()
     {
@@ -229,8 +233,17 @@ class EditControl : public Os::BaseWindow
             m_buffer_array.insert(m_buffer_array.begin() + dest, to_insert);
         }
     }
+    static int get_indent_len()
+    {
+        return indent_len;
+    }
+    static void set_indent_len(int len)
+    {
+        indent_len = len;
+    }
 
   private:
+    static int indent_len;
     static HINSTANCE m_hscintilla;
     // Keep track of number of objects. Handle to scintilla.dll will be freed if number of objects reaches zero
     static int m_num_objects;
@@ -239,11 +252,11 @@ class EditControl : public Os::BaseWindow
     SCINTILLA_FUNC m_scintilla_function;
     SCINTILLA_PTR m_scintilla_pointer;
     BUFFER_ARRAY m_buffer_array;
-    // For the file info
+    // TODO: Remove _mSLineDrawFont
     int _MSLineDrawFont;
     int m_current_index;
-    void set_style(int style, COLORREF fore, COLORREF back = white, int size = -1, const char *font_name = 0) const;
-    void set_font(int style, const char *font_name, bool is_bold = false, bool is_italic = false) const;
+    void set_style(int style, COLORREF fore, COLORREF back = white, int size = -1, const char* font_name = 0) const;
+    void set_font(int style, const char* font_name, bool is_bold = false, bool is_italic = false) const;
     void set_cpp_lexer(LangType type);
     void define_marker(int marker, int markerType, COLORREF fore, COLORREF back)
     {
@@ -251,5 +264,5 @@ class EditControl : public Os::BaseWindow
         execute(SCI_MARKERSETFORE, marker, fore);
         execute(SCI_MARKERSETBACK, marker, back);
     };
-    void expand(int &line, bool expand, bool force = false, int visLevels = 0, int level = -1);
+    void expand(int& line, bool expand, bool force = false, int visLevels = 0, int level = -1);
 };

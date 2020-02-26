@@ -2,4 +2,4 @@
 
 #include "Os.hpp"
 
-void display_error(const char *title);
+void display_error(const char* title);

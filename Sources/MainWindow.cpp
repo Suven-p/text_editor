@@ -9,6 +9,7 @@ LRESULT Os::MainWindow::handle_message(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
+    // TODO: Create (bottombar?)
     case WM_CREATE: {
         dc1.toggle_dragndrop(true);
         try
@@ -20,6 +21,7 @@ LRESULT Os::MainWindow::handle_message(UINT uMsg, WPARAM wParam, LPARAM lParam)
             dc1.display();
             dc1.activate(0);
             sce1.display();
+            ::SetFocus(sce1.window());
         }
         catch (std::runtime_error re)
         {
@@ -28,14 +30,14 @@ LRESULT Os::MainWindow::handle_message(UINT uMsg, WPARAM wParam, LPARAM lParam)
         return true;
     }
     case WM_DRAWITEM: {
-        DRAWITEMSTRUCT *dis = (DRAWITEMSTRUCT *)lParam;
+        DRAWITEMSTRUCT* dis = (DRAWITEMSTRUCT*)lParam;
         if (dis->CtlType == ODT_TAB)
         {
             return ::SendMessage(dis->hwndItem, WM_DRAWITEM, wParam, lParam);
         }
     }
     case WM_NOTIFY: {
-        notify(reinterpret_cast<SCNotification *>(lParam));
+        notify(reinterpret_cast<SCNotification*>(lParam));
         return FALSE;
     }
 
@@ -65,8 +67,8 @@ void Os::MainWindow::destroy()
     ::DestroyWindow(m_hwnd);
 }
 
-void Os::MainWindow::create(LPCTSTR window_name, DWORD style, DWORD ex_style, int x, int y, int width, int height,
-                            HWND parent, HMENU menu)
+void Os::MainWindow::create(
+    LPCTSTR window_name, DWORD style, DWORD ex_style, int x, int y, int width, int height, HWND parent, HMENU menu)
 {
     if (!GetClassInfoEx(GetModuleHandle(NULL), class_name(), &wc))
     {
@@ -82,8 +84,18 @@ void Os::MainWindow::create(LPCTSTR window_name, DWORD style, DWORD ex_style, in
             throw std::runtime_error(err_msg);
         }
     }
-    HWND m_hwnd = CreateWindowEx(
-        ex_style, class_name(), window_name, style, x, y, width, height, parent, menu, m_hInstance, this);
+    HWND m_hwnd = CreateWindowEx(ex_style,
+                                 class_name(),
+                                 window_name,
+                                 style,
+                                 x,
+                                 y,
+                                 width,
+                                 height,
+                                 parent,
+                                 menu,
+                                 m_hInstance,
+                                 this);
     if (!m_hwnd)
     {
         auto error_code = GetLastError();
@@ -92,12 +104,12 @@ void Os::MainWindow::create(LPCTSTR window_name, DWORD style, DWORD ex_style, in
     }
 }
 
-void Os::MainWindow::notify(SCNotification *notification)
+void Os::MainWindow::notify(SCNotification* notification)
 {
     switch (notification->nmhdr.code)
     {
     case TCN_TABDROPPED: {
-        TabControl *sender = reinterpret_cast<TabControl *>(notification->nmhdr.idFrom);
+        TabControl* sender = reinterpret_cast<TabControl*>(notification->nmhdr.idFrom);
         int dest_index = sender->get_dragged_tab_index();
         int src_index = sender->get_src_tab_index();
         sce1.swap_buffer(dest_index, src_index);
@@ -124,35 +136,55 @@ void Os::MainWindow::notify(SCNotification *notification)
         return;
     }
     case SCN_CHARADDED: {
+        int pos = sce1.execute(SCI_GETCURRENTPOS, 0, 0);
         switch (static_cast<char>(notification->ch))
         {
         case '<': {
-            int pos = sce1.execute(SCI_GETCURRENTPOS, 0, 0);
             char to_insert[] = ">";
             sce1.execute(SCI_ADDTEXT, strlen(to_insert), (LPARAM)to_insert);
             sce1.execute(SCI_GOTOPOS, pos);
             break;
         }
         case '[': {
-            int pos = sce1.execute(SCI_GETCURRENTPOS, 0, 0);
             char to_insert[] = "]";
             sce1.execute(SCI_ADDTEXT, strlen(to_insert), (LPARAM)to_insert);
             sce1.execute(SCI_GOTOPOS, pos);
             break;
         }
+        // TODO: Handle multiline function arguments
         case '(': {
-            int pos = sce1.execute(SCI_GETCURRENTPOS, 0, 0);
             char to_insert[] = ")";
             sce1.execute(SCI_ADDTEXT, strlen(to_insert), (LPARAM)to_insert);
             sce1.execute(SCI_GOTOPOS, pos);
             break;
         }
         case '{': {
-            int pos = sce1.execute(SCI_GETCURRENTPOS, 0, 0);
-            char to_insert[] = "\n\t\n}";
-            sce1.execute(SCI_ADDTEXT, strlen(to_insert), (LPARAM)to_insert);
-            sce1.execute(SCI_GOTOPOS, pos + 2);
+            // TODO: Handle logic in \n
+            intptr_t current_line = sce1.execute(SCI_LINEFROMPOSITION, pos);
+            // 0x400 is base level folding
+            int fold_level = (sce1.execute(SCI_GETFOLDLEVEL, current_line) & SC_FOLDLEVELNUMBERMASK) - 0x400;
+            int bracket_indent = fold_level * sce1.get_indent_len();
+            sce1.execute(SCI_SETLINEINDENTATION, current_line, bracket_indent);
+            std::string to_insert = "\n";
+            sce1.execute(SCI_ADDTEXT, to_insert.size(), (LPARAM)to_insert.c_str());
+            // line after { requires extra level of indenting
+            int other_indent = (fold_level + 1) * sce1.get_indent_len();
+            // TODO: Add support for tab based indenting
+            to_insert = std::string(other_indent, ' ');
+            sce1.execute(SCI_ADDTEXT, to_insert.size(), (LPARAM)to_insert.c_str());
+            // Store current position to restore later
+            pos = sce1.execute(SCI_GETCURRENTPOS, 0, 0);
+            to_insert = "\n}";
+            sce1.execute(SCI_ADDTEXT, to_insert.size(), (LPARAM)to_insert.c_str());
+            sce1.execute(SCI_SETLINEINDENTATION, current_line + 2, bracket_indent);
+            sce1.execute(SCI_GOTOPOS, pos);
             break;
+        }
+        // TODO: Handle brace closes
+        case '\n': {
+            // int current_line = sce1.execute(SCI_LINEFROMPOSITION, pos);
+            // int fold_level = sce1.execute(SCI_GETFOLDLEVEL, current_line);
+            // sce1.execute(SCI_SETINDENT, sce1.get_indent_len() * fold_level);
         }
         default:
             break;
@@ -160,8 +192,20 @@ void Os::MainWindow::notify(SCNotification *notification)
 
         break;
     }
+    case SCN_MODIFIED: {
+        if ((notification->modificationType & SC_PERFORMED_USER) &&
+            (notification->modificationType & SC_MOD_INSERTTEXT))
+        {
+            // TODO: Format document on paste
+            /*std::string msg = "Add at " + std::to_string(notification->position) + " of length " +
+                              std::to_string(notification->length);
+            msg += " Now at " + std::to_string(sce1.execute(SCI_GETCURRENTPOS));
+            MessageBox(0, msg.c_str(), "add", 0);*/
+        }
+        break;
+    }
     case SCN_UPDATEUI: {
-        if (notification->updated == SC_UPDATE_SELECTION)
+        // MessageBox(0, "a", "a", 0); if (notification->updated == SC_UPDATE_SELECTION)
         {
             static int brace1 = 0, brace2 = 0;
             int pos = sce1.execute(SCI_GETCURRENTPOS, 0, 0);
@@ -187,7 +231,9 @@ void Os::MainWindow::notify(SCNotification *notification)
                 sce1.execute(SCI_BRACEHIGHLIGHT, -1, -1);
             }
         }
+        break;
     }
+
     default:
         break;
     } // End of switch

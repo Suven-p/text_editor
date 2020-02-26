@@ -1,15 +1,19 @@
 BasedOnStyle: Microsoft
+AlignAfterOpenBracket: Align
 AlignConsecutiveMacros: true
 AlignOperands: true
 AlignTrailingComments: true
+AllowAllArgumentsOnNextLine: false
+AllowShortBlocksOnASingleLine: true
+AlwaysBreakTemplateDeclarations: Yes
 BinPackArguments: false
+BinPackParameters: false
 IndentWidth: 4
 KeepEmptyLinesAtTheStartOfBlocks: false
 MaxEmptyLinesToKeep: 1
 NamespaceIndentation: Inner
+PointerAlignment: Left 
+SpaceBeforeRangeBasedForLoopColon: true
 TabWidth: 4
 UseTab: Never
-AlwaysBreakTemplateDeclarations: Yes
-SpaceBeforeRangeBasedForLoopColon: true
-
-
+SortUsingDeclarations: true
