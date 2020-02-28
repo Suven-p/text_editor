@@ -140,6 +140,14 @@ void Os::MainWindow::notify(SCNotification* notification)
         switch (static_cast<char>(notification->ch))
         {
         case '<': {
+            int word_end = pos;
+            while (word_end) {
+                char c = sce1.execute(SCI_GETCHARAT, word_end);
+                if (isspace(c))
+                    word_end--;
+            }
+            int word_start = sce1.execute(SCI_WORDSTARTPOSITION, pos, true);
+            MessageBox(0, std::to_string(word_start).c_str(), std::to_string(pos).c_str(), 0);
             char to_insert[] = ">";
             sce1.execute(SCI_ADDTEXT, strlen(to_insert), (LPARAM)to_insert);
             sce1.execute(SCI_GOTOPOS, pos);

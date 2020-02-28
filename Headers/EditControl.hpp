@@ -4,14 +4,14 @@
 #include "Buffer.hpp"
 #include "Colors.hpp"
 #include "ErrorMessage.hpp"
+#include "Os.hpp"
 #include "SciLexer.h"
 #include "Scintilla.h"
 #include <stdexcept>
 #include <string>
 #include <vector>
 
-using SCINTILLA_FUNC = int(__cdecl*)(void*, int, int, int);
-using SCINTILLA_PTR = void*;
+using SCINTILLA_PTR = sptr_t;
 using BUFFER_ARRAY = std::vector<Buffer>;
 using CHARACTER_RANGE = Sci_CharacterRange;
 
@@ -55,12 +55,11 @@ class EditControl : public Os::BaseWindow
         m_hwnd = NULL;
     };
     virtual void init(HINSTANCE hInst, HWND hParent);
-    LRESULT execute(UINT Msg, WPARAM wParam = 0, LPARAM lParam = 0) const
-    {
+    LRESULT execute(UINT msg, WPARAM wParam = 0, LPARAM lParam = 0) const {
         return m_scintilla_function(m_scintilla_pointer,
-                                    static_cast<int>(Msg),
-                                    static_cast<int>(wParam),
-                                    static_cast<int>(lParam));
+                                    msg,
+                                    wParam,
+                                    lParam);
     };
     void set_document_language(LangType language);
     char* attach_default_doc(int num);
@@ -249,7 +248,7 @@ class EditControl : public Os::BaseWindow
     static int m_num_objects;
     static const int m_marker_array[][NUM_FOLDER_STATE];
     FolderStyle m_folder_style;
-    SCINTILLA_FUNC m_scintilla_function;
+    SciFnDirect m_scintilla_function;
     SCINTILLA_PTR m_scintilla_pointer;
     BUFFER_ARRAY m_buffer_array;
     // TODO: Remove _mSLineDrawFont

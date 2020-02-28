@@ -65,7 +65,7 @@ void EditControl::init(HINSTANCE hInst, HWND hparent)
         std::string err_msg = "Error " + std::to_string(error_code) + " Cannot create scintilla window";
         throw std::runtime_error(err_msg);
     }
-    m_scintilla_function = (SCINTILLA_FUNC)::SendMessage(m_hwnd, SCI_GETDIRECTFUNCTION, 0, 0);
+    m_scintilla_function = (SciFnDirect)::SendMessage(m_hwnd, SCI_GETDIRECTFUNCTION, 0, 0);
     m_scintilla_pointer = (SCINTILLA_PTR)::SendMessage(m_hwnd, SCI_GETDIRECTPOINTER, 0, 0);
     if (!m_scintilla_function || !m_scintilla_pointer)
     {
