@@ -11,6 +11,7 @@ HINSTANCE EditControl::m_hscintilla = LoadLibrary("sci64\\SciLexer.dll");
 #else
 HINSTANCE EditControl::m_hscintilla = LoadLibrary("sci32\\SciLexer.dll");
 #endif
+
 int EditControl::m_num_objects = 0;
 const int EditControl::m_line_number_margin = 0;
 const int EditControl::m_symbol_margin = 1;
@@ -31,11 +32,13 @@ FOLDERMIDTAIL    | SC_MARK_EMPTY       SC_MARK_EMPTY     SC_MARK_TCORNERCURVE   
 
 // clang-format off
 const int EditControl::m_marker_array[][NUM_FOLDER_STATE] = {
-    {SC_MARKNUM_FOLDEROPEN, SC_MARKNUM_FOLDER, SC_MARKNUM_FOLDERSUB, SC_MARKNUM_FOLDERTAIL, SC_MARKNUM_FOLDEREND, SC_MARKNUM_FOLDEROPENMID,         SC_MARKNUM_FOLDERMIDTAIL},
-    {SC_MARK_MINUS, SC_MARK_PLUS, SC_MARK_EMPTY, SC_MARK_EMPTY, SC_MARK_EMPTY, SC_MARK_EMPTY, SC_MARK_EMPTY},
-    {SC_MARK_ARROWDOWN, SC_MARK_ARROW, SC_MARK_EMPTY, SC_MARK_EMPTY, SC_MARK_EMPTY, SC_MARK_EMPTY, SC_MARK_EMPTY},
-    {SC_MARK_CIRCLEMINUS, SC_MARK_CIRCLEPLUS, SC_MARK_VLINE, SC_MARK_LCORNERCURVE, SC_MARK_CIRCLEPLUSCONNECTED, SC_MARK_CIRCLEMINUSCONNECTED,       SC_MARK_TCORNERCURVE},
-    {SC_MARK_BOXMINUS, SC_MARK_BOXPLUS, SC_MARK_VLINE, SC_MARK_LCORNER, SC_MARK_BOXPLUSCONNECTED, SC_MARK_BOXMINUSCONNECTED, SC_MARK_TCORNER}};
+{SC_MARKNUM_FOLDEROPEN,SC_MARKNUM_FOLDER,SC_MARKNUM_FOLDERSUB,SC_MARKNUM_FOLDERTAIL,SC_MARKNUM_FOLDEREND,SC_MARKNUM_FOLDEROPENMID,
+    SC_MARKNUM_FOLDERMIDTAIL},
+{SC_MARK_MINUS, SC_MARK_PLUS, SC_MARK_EMPTY, SC_MARK_EMPTY, SC_MARK_EMPTY, SC_MARK_EMPTY, SC_MARK_EMPTY},
+{SC_MARK_ARROWDOWN, SC_MARK_ARROW, SC_MARK_EMPTY, SC_MARK_EMPTY, SC_MARK_EMPTY, SC_MARK_EMPTY, SC_MARK_EMPTY},
+{SC_MARK_CIRCLEMINUS,SC_MARK_CIRCLEPLUS,SC_MARK_VLINE,SC_MARK_LCORNERCURVE,SC_MARK_CIRCLEPLUSCONNECTED,SC_MARK_CIRCLEMINUSCONNECTED, 
+    SC_MARK_TCORNERCURVE},
+{SC_MARK_BOXMINUS, SC_MARK_BOXPLUS, SC_MARK_VLINE, SC_MARK_LCORNER, SC_MARK_BOXPLUSCONNECTED, SC_MARK_BOXMINUSCONNECTED, SC_MARK_TCORNER}};
 // clang-format on
 
 void EditControl::init(HINSTANCE hInst, HWND hparent)
@@ -45,8 +48,6 @@ void EditControl::init(HINSTANCE hInst, HWND hparent)
         throw(std::runtime_error("Cannot load library SciLexer.dll"));
     }
     BaseWindow::init(hInst, hparent);
-    RECT parent_rect;
-    GetClientRect(m_hparent, &parent_rect);
     m_hwnd = ::CreateWindowEx(WS_EX_CLIENTEDGE,
                               "Scintilla",
                               "",
@@ -61,8 +62,7 @@ void EditControl::init(HINSTANCE hInst, HWND hparent)
                               NULL);
     if (!m_hwnd)
     {
-        auto error_code = GetLastError();
-        std::string err_msg = "Error " + std::to_string(error_code) + " Cannot create scintilla window";
+        std::string err_msg = "Error " + std::to_string(GetLastError()) + " Cannot create scintilla window";
         throw std::runtime_error(err_msg);
     }
     m_scintilla_function = (SciFnDirect)::SendMessage(m_hwnd, SCI_GETDIRECTFUNCTION, 0, 0);
@@ -83,20 +83,17 @@ void EditControl::init(HINSTANCE hInst, HWND hparent)
     showMargin(m_folder_margin);
     showMargin(m_symbol_margin);
 
-    // execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold"), 1);
     execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold"), reinterpret_cast<LPARAM>("1"));
     execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold.compact"), reinterpret_cast<LPARAM>("1"));
     execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold.comment"), reinterpret_cast<LPARAM>("1"));
     execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold.preprocessor"), reinterpret_cast<LPARAM>("1"));
-    execute(SCI_SETFOLDFLAGS, 16, 0);
+    //execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("styling.within.preprocessor"), reinterpret_cast<LPARAM>("0"));
+    execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("lexer.cpp.track.preprocessor"), reinterpret_cast<LPARAM>("1"));
+    execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("lexer.cpp.update.preprocessor"), reinterpret_cast<LPARAM>("1"));
+    
+    execute(SCI_SETFOLDFLAGS, SC_FOLDFLAG_LINEAFTER_CONTRACTED, 0);
     set_marker_style(FolderStyle::FOLDER_STYLE_BOX);
     execute(SCI_SETAUTOMATICFOLD, SC_AUTOMATICFOLD_CHANGE | SC_AUTOMATICFOLD_CLICK | SC_AUTOMATICFOLD_SHOW, 0);
-    set_marker_style(m_folder_style);
-    for (int i = 0; i < NUM_FOLDER_STATE; i++)
-        define_marker(m_marker_array[int(FolderStyle::FOLDER_TYPE)][i],
-                      m_marker_array[int(m_folder_style)][i],
-                      white,
-                      black);
 };
 
 void EditControl::set_style(int style, COLORREF fore, COLORREF back, int size, const char* font) const
@@ -120,25 +117,26 @@ void EditControl::set_font(int style, const char* font, bool is_bold, bool is_it
 }
 
 const char cInstrWords[] = "if else switch case default break goto return for while do continue typedef sizeof NULL";
-const char cppInstrWords[] = "new delete throw try catch namespace operator this const_cast static_cast dynamic_cast "
-                             "reinterpreter_cast true false null";
+const char cppInstrWords[] =
+    "if else switch case default break goto return for while do continue typedef sizeof NULL new delete throw try "
+    "catch namespace operator this const_cast static_cast dynamic_cast reinterpreter_cast true false null";
 
 const char c_types[] = "void struct union enum char short int long double float signed unsigned const static extern "
                        "auto register volatile";
-const char cpp_types[] = "bool class private protected public friend inline template virtual";
+const char cpp_types[] = "void struct union enum char short int long double float signed unsigned const static extern "
+                         "auto register volatile bool class private protected public friend inline template virtual";
 
 void EditControl::set_cpp_lexer(LangType langauge)
 {
     std::string cppInstrs;
     std::string cppTypes;
-    cppInstrs = cInstrWords + std::string(" ") + cppInstrWords;
-    cppTypes = c_types + std::string(" ") + cpp_types;
-
+    cppInstrs = cppInstrWords;
+    cppTypes = cpp_types;
+    
     execute(SCI_SETLEXER, SCLEX_CPP);
     execute(SCI_SETKEYWORDS, 0, (LPARAM)cppInstrs.c_str());
     execute(SCI_SETKEYWORDS, 1, (LPARAM)cppTypes.c_str());
-    // Global default style.
-    set_style(STYLE_DEFAULT, black, white, 10, "Verdana");
+    set_style(STYLE_DEFAULT, grey, white, 10, "Verdana");
     execute(SCI_STYLECLEARALL, 0, 0); // Copies to all other styles.
 
     set_style(SCE_C_DEFAULT, black, white);                              // 0
@@ -148,12 +146,15 @@ void EditControl::set_cpp_lexer(LangType langauge)
     set_style(SCE_C_NUMBER, orange, white, 0, 0);                        // 4
     set_style(SCE_C_WORD, blue, white);                                  // 5
     set_style(SCE_C_WORD2, purple, white);                               // 5
-    execute(SCI_STYLESETBOLD, SCE_C_WORD, 1);
-    set_style(SCE_C_STRING, grey, white, 0, 0);        // 6
-    set_style(SCE_C_CHARACTER, grey, white, 0, 0);     // 7
-    set_style(SCE_C_PREPROCESSOR, brown, white, 0, 0); // 9
-    set_style(SCE_C_OPERATOR, darkBlue, white, 0, 0);  // 10
-    execute(SCI_STYLESETBOLD, SCE_C_OPERATOR, 1);
+    
+    // execute(SCI_STYLESETBOLD, SCE_C_WORD, 1);
+    set_style(SCE_C_STRING, RGB(226, 31, 31), white, 0, 0); // 6 // red
+    set_style(SCE_C_CHARACTER, RGB(226, 31, 31), white, 0, 0);  // 7
+    set_style(SCE_C_PREPROCESSOR, brown, white, 0, 0);          // 9
+    set_style(SCE_C_OPERATOR, darkBlue, white, 0, 0);           // 10
+    set_style(SCE_C_IDENTIFIER, RGB(116, 18, 33), white);
+    //execute(SCI_STYLESETBOLD, SCE_C_OPERATOR, 1);
+    set_style(SCE_C_PREPROCESSORCOMMENT, grey, white);
     // set_style(SCE_C_STRINGEOL, darkBlue, white, 0, 0); //12
     // set_style(SCE_C_COMMENTLINEDOC, darkBlue, white, 0, 0); //15
     // set_style(SCE_C_WORD2, darkBlue, white, 0, 0); //16
@@ -182,16 +183,16 @@ void EditControl::set_document_language(LangType language)
     // All the global styles should put here
     set_style(STYLE_INDENTGUIDE, liteGrey);
     set_style(STYLE_CONTROLCHAR, liteGrey, red);
-    set_style(STYLE_BRACELIGHT, blue, yellow);
+    set_style(STYLE_BRACELIGHT, blue, grey);
     set_caret_color_width(caretColor, caretWidth);
     set_selection_color(selectColorFore, selectColorBack);
     execute(SCI_COLOURISE, 0, -1);
 }
 
-char* EditControl::attach_default_doc(int num)
+wchar_t* EditControl::attach_default_doc(int num)
 {
-    std::string title;
-    title = UNTITLED_STR + std::to_string(num);
+    std::wstring title;
+    title = DEFAULT_TAB_NAME + std::to_wstring(num);
 
     // get the doc pointer attached (by default) on the view Scintilla
     Document doc = execute(SCI_GETDOCPOINTER, 0, 0);
@@ -204,7 +205,7 @@ char* EditControl::attach_default_doc(int num)
     return m_buffer_array[m_current_index].m_full_path;
 }
 
-int EditControl::get_index(const std::string& file_name) const
+int EditControl::get_index(const std::wstring& file_name) const
 {
     int index = -1;
     for (size_t size = m_buffer_array.size(), i = 0; i < size; i++)
@@ -220,7 +221,7 @@ int EditControl::get_index(const std::string& file_name) const
 
 //! \brief this method activates the doc and the corresponding sub tab
 //! \brief return the index of previeus current doc
-char* EditControl::activate_document(int index)
+wchar_t* EditControl::activate_document(int index)
 {
     // before activating another document, we get the current position
     // from the Scintilla view then save it to the current document
@@ -252,7 +253,7 @@ char* EditControl::activate_document(int index)
 // this method creates a new doc ,and adds it into
 // the end of the doc list and a last sub tab, then activate it
 // it returns the name of this created doc (that's the current doc also)
-char* EditControl::create(std::string file_name)
+wchar_t* EditControl::create(std::wstring file_name)
 {
     Document new_doc = execute(SCI_CREATEDOCUMENT);
     m_buffer_array.push_back(Buffer(new_doc, file_name.c_str()));
@@ -260,15 +261,14 @@ char* EditControl::create(std::string file_name)
     return activate_document(int(m_buffer_array.size()) - 1);
 }
 
-char* EditControl::create(int num_new)
+wchar_t* EditControl::create(int num_new)
 {
-    char title[10];
-    char nb[4];
-    strcat(strcpy(title, UNTITLED_STR), _itoa(num_new, nb, 10));
+    wchar_t title[50];
+    wcscat(wcscpy(title, DEFAULT_TAB_NAME), std::to_wstring(num_new).c_str());
     return create(title);
 }
 
-int EditControl::set_title(std::string file_name)
+int EditControl::set_title(std::wstring file_name)
 {
     m_buffer_array[m_current_index].set_file_name(file_name.c_str());
     set_document_language(m_buffer_array[m_current_index].m_language);

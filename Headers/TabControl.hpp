@@ -1,5 +1,6 @@
 #pragma once
 
+#define UNICODE
 #ifndef _WIN32_IE
 #define _WIN32_IE 0x0600
 #endif
@@ -21,7 +22,7 @@ class TabControl : public Os::BaseWindow
   public:
     TabControl()
         : BaseWindow(), m_num_tabs(0), m_has_img(false), m_hfont(NULL), m_drag_point(POINT{0, 0}), m_source_tab(0),
-          m_tab_dragged(0), m_default_proc(NULL), m_is_dragged(false), m_is_dragging_insode(false){};
+          m_tab_dragged(0), m_default_proc(NULL), m_is_dragged(false), m_is_dragging_inside(false){};
     virtual ~TabControl()
     {
         if (m_hwnd)
@@ -33,7 +34,7 @@ class TabControl : public Os::BaseWindow
         return m_num_tabs;
     };
     void init(HINSTANCE hInst, HWND hwnd);
-    int insert(const std::string &name);
+    int insert(const std::wstring &name);
     void activate(int index);
     virtual void resize_to(RECT &rc);
     void delete_item(int index);
@@ -67,7 +68,7 @@ class TabControl : public Os::BaseWindow
     WNDPROC m_default_proc;
     static bool m_enable_dragdrop;
     bool m_is_dragged;
-    bool m_is_dragging_insode;
+    bool m_is_dragging_inside;
     int m_source_tab;
     int m_tab_dragged;
     POINT m_drag_point;

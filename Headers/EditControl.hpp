@@ -31,15 +31,15 @@ class EditControl : public Os::BaseWindow
 {
   public:
     EditControl()
-        : BaseWindow(), m_scintilla_function(NULL), m_scintilla_pointer(NULL), m_current_index(0), _MSLineDrawFont(0),
-          m_folder_style(FolderStyle::FOLDER_STYLE_BOX)
+        : BaseWindow(), m_scintilla_function(NULL), m_scintilla_pointer(NULL), m_current_index(0), _MSLineDrawFont(0)
     {
         ++m_num_objects;
     }
     virtual ~EditControl()
     {
         --m_num_objects;
-        if ((m_num_objects == 0) && (m_hscintilla))
+        // free library if all objects are destroyed and SciLexer.dll is not freed
+        if ((!m_num_objects) && (m_hscintilla))
         {
             ::FreeLibrary(m_hscintilla);
         }
@@ -47,35 +47,33 @@ class EditControl : public Os::BaseWindow
         {
             ::RemoveFontResource(LINEDRAW_FONT);
         }
-    };
+    }
     virtual void destroy()
     {
         remove_all_docs();
         ::DestroyWindow(m_hwnd);
         m_hwnd = NULL;
-    };
+    }
     virtual void init(HINSTANCE hInst, HWND hParent);
-    LRESULT execute(UINT msg, WPARAM wParam = 0, LPARAM lParam = 0) const {
-        return m_scintilla_function(m_scintilla_pointer,
-                                    msg,
-                                    wParam,
-                                    lParam);
+    LRESULT execute(UINT msg, WPARAM wParam = 0, LPARAM lParam = 0) const
+    {
+        return m_scintilla_function(m_scintilla_pointer, msg, wParam, lParam);
     };
     void set_document_language(LangType language);
-    char* attach_default_doc(int num);
-    int get_index(const std::string& file_name) const;
-    char* activate_document(int index);
-    char* create(std::string file_name);
-    char* create(int num_new);
+    wchar_t* attach_default_doc(int num);
+    int get_index(const std::wstring& file_name) const;
+    wchar_t* activate_document(int index);
+    wchar_t* create(std::wstring file_name);
+    wchar_t* create(int num_new);
     int get_current_index() const
     {
         return m_current_index;
     }
-    const char* get_current_title() const
+    const wchar_t* get_current_title() const
     {
         return m_buffer_array[m_current_index].m_full_path;
     }
-    int set_title(std::string file_name);
+    int set_title(std::wstring file_name);
     int close_current(int& to_activate);
     void close_at(int index);
     void remove_all_docs();
@@ -183,7 +181,7 @@ class EditControl : public Os::BaseWindow
         return static_cast<bool>(execute(SCI_GETMARGINWIDTHN, margin, 0));
     }
     void margin_click(int position, int modifiers);
-    void set_marker_style(FolderStyle style)
+    void set_marker_style(FolderStyle style, COLORREF fore = white, COLORREF back = black)
     {
         if (m_folder_style == style)
             return;
@@ -239,6 +237,37 @@ class EditControl : public Os::BaseWindow
     static void set_indent_len(int len)
     {
         indent_len = len;
+    }
+    char get_previous_char(int pos)
+    {
+        int word_end = pos;
+        while (word_end)
+        {
+            char c = execute(SCI_GETCHARAT, word_end);
+            if (!isspace(c))
+                return c;
+            word_end--;
+        }
+        return 0;
+    }
+    std::string get_previous_word(int pos)
+    {
+        int word_end = pos;
+        while (word_end)
+        {
+            char c = execute(SCI_GETCHARAT, word_end);
+            if (!isspace(c))
+                break;
+            word_end--;
+        }
+        int word_start = execute(SCI_WORDSTARTPOSITION, word_end, false);
+        char* buffer = new char[word_end - word_start + 1];
+        Sci_TextRange tr;
+        tr.chrg.cpMin = word_start;
+        tr.chrg.cpMax = word_end + 1;
+        tr.lpstrText = buffer;
+        execute(SCI_GETTEXTRANGE, 0, (LPARAM)&tr);
+        return std::string(buffer);
     }
 
   private:

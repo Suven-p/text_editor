@@ -2,10 +2,11 @@
 
 #include "Scintilla.h"
 #include <shlwapi.h>
+#include <stdexcept>
 #include <sys/stat.h>
 #include <sys/types.h>
 
-const char UNTITLED_STR[] = "New ";
+constexpr wchar_t DEFAULT_TAB_NAME[] = L"New ";
 using Document = sptr_t;
 enum class LangType
 {
@@ -26,22 +27,22 @@ class Buffer
 
   public:
     Buffer() = delete;
-    Buffer(Document doc, LPCTSTR fileName) : m_doc(doc), m_is_dirty(false), m_is_read_only(false)
+    Buffer(Document doc, std::wstring fileName) : m_doc(doc), m_is_dirty(false), m_is_read_only(false)
     {
-        m_full_path = new char[MAX_PATH];
+        m_full_path = new wchar_t[MAX_PATH];
         m_pos.first_line = 0;
         m_pos.start_pos = 0;
         m_pos.end_pos = 0;
         set_file_name(fileName);
-    };
+    }
     Buffer(const Buffer& buf)
         : m_is_dirty(buf.m_is_dirty), m_doc(buf.m_doc), m_language(buf.m_language), m_is_read_only(buf.m_is_read_only),
           m_pos(buf.m_pos)
     {
-        m_full_path = new char[MAX_PATH];
-        strcpy(m_full_path, buf.m_full_path);
-    };
-    Buffer& operator=(const Buffer& buf)
+        m_full_path = new wchar_t[MAX_PATH];
+        wcscpy(m_full_path, buf.m_full_path);
+    }
+    Buffer& operator=(const Buffer& buf) noexcept
     {
         if (this != &buf)
         {
@@ -50,7 +51,7 @@ class Buffer
             m_language = buf.m_language;
             m_is_read_only = buf.m_is_read_only;
             m_pos = buf.m_pos;
-            strcpy(m_full_path, buf.m_full_path);
+            wcscpy(m_full_path, buf.m_full_path);
         }
         return *this;
     }
@@ -85,41 +86,44 @@ class Buffer
             delete[] m_full_path;
         }
     }
-    // TODO: Add support other file extension
-    void set_file_name(const char* fn)
+    // TODO: Add support for non cpp extension
+    void set_file_name(const std::wstring file_name)
     {
-        strcpy(m_full_path, fn);
+        wcscpy(m_full_path, file_name.c_str());
         m_language = LangType::L_CPP;
-    };
+    }
     auto get_file_name() const
     {
         return m_full_path;
     }
-    void is_file_read_only()
+    bool is_file_read_only()
     {
-        struct _stat buf;
-        if (!_stat(m_full_path, &buf))
+        DWORD attributes = GetFileAttributesW(m_full_path);
+        if (attributes != INVALID_FILE_ATTRIBUTES)
         {
-            m_is_read_only = (bool)(!(buf.st_mode & _S_IWRITE));
+            return (attributes & FILE_ATTRIBUTE_READONLY);
         }
-    };
+        else
+        {
+            std::string err_msg = "Error " + std::to_string(GetLastError()) + " Cannot create scintilla window";
+            throw std::runtime_error(err_msg);
+        }
+    }
+    bool is_read_only()
+    {
+        if (is_file_read_only()) {
+            m_is_read_only = true;
+        }
+        return m_is_read_only;
+    }
     bool is_dirty() const
     {
         return m_is_dirty;
-    };
-    bool is_read_only()
-    {
-        struct _stat buf;
-        if (!_stat(m_full_path, &buf))
-        {
-            m_is_read_only = (bool)(!(buf.st_mode & _S_IWRITE));
-        }
-        return m_is_read_only;
-    };
+    }
 
   private:
     // TODO: convert file path to wchar
-    char* m_full_path{nullptr};
+    wchar_t* m_full_path{nullptr};
     bool m_is_dirty;
     Document m_doc;
     LangType m_language;

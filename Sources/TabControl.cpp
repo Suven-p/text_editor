@@ -25,9 +25,9 @@ void TabControl::init(HINSTANCE hInst, HWND parent)
         WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE | TCS_FOCUSNEVER | TCS_TABS | TCS_OWNERDRAWFIXED;
     RECT parent_client_rect;
     GetClientRect(m_hparent, &parent_client_rect);
-    m_hwnd = ::CreateWindowEx(TCS_EX_FLATSEPARATORS,
-                              WC_TABCONTROL,
-                              TEXT(""),
+    m_hwnd = ::CreateWindowExW(TCS_EX_FLATSEPARATORS,
+                              WC_TABCONTROLW,
+                              L"",
                               style,
                               0,
                               0,
@@ -41,9 +41,9 @@ void TabControl::init(HINSTANCE hInst, HWND parent)
     {
         throw std::runtime_error("Creating TabControl failed!");
     }
-    ::SetWindowLongPtr(m_hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+    ::SetWindowLongPtrW(m_hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
     m_default_proc =
-        reinterpret_cast<WNDPROC>(::SetWindowLongPtr(m_hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(tabbar_proc)));
+        reinterpret_cast<WNDPROC>(::SetWindowLongPtrW(m_hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(tabbar_proc)));
     if (!m_default_proc)
     {
         // ERROR_ABANDONED_WAIT_0
@@ -52,19 +52,19 @@ void TabControl::init(HINSTANCE hInst, HWND parent)
         throw std::runtime_error(err_msg);
     }
     ::SetCursor(::LoadCursor(m_hInstance, IDC_ARROW));
-    ::SendMessage(m_hwnd, TCM_SETPADDING, 0, MAKELPARAM(6, 5));
+    ::SendMessageW(m_hwnd, TCM_SETPADDING, 0, MAKELPARAM(6, 5));
 }
 
-int TabControl::insert(const std::string &tab_name)
+int TabControl::insert(const std::wstring &tab_name)
 {
-    TCITEM tie;
+    TCITEMW tie;
     tie.mask = TCIF_TEXT | TCIF_IMAGE;
     int index = -1;
     if (m_has_img)
         index = 0;
     tie.iImage = index;
-    tie.pszText = const_cast<char *>(tab_name.c_str());
-    return int(::SendMessage(m_hwnd, TCM_INSERTITEM, m_num_tabs++, reinterpret_cast<LPARAM>(&tie)));
+    tie.pszText = const_cast<wchar_t *>(tab_name.c_str());
+    return int(::SendMessageW(m_hwnd, TCM_INSERTITEM, m_num_tabs++, reinterpret_cast<LPARAM>(&tie)));
 }
 
 void TabControl::resize_to(RECT &rc)
@@ -72,12 +72,11 @@ void TabControl::resize_to(RECT &rc)
     display(rc.right > 10);
     BaseWindow::resize_to(rc);
     TabCtrl_AdjustRect(m_hwnd, FALSE, &rc);
-    int k = 0;
 }
 
 void TabControl::activate(int index)
 {
-    ::SendMessage(m_hwnd, TCM_SETCURSEL, index, 0);
+    ::SendMessageW(m_hwnd, TCM_SETCURSEL, index, 0);
 };
 
 void TabControl::delete_item(int index)
@@ -159,7 +158,7 @@ LRESULT TabControl::handle_message(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
                 ::ReleaseCapture();
             NMHDR nmhdr;
             nmhdr.hwndFrom = m_hwnd;
-            nmhdr.code = m_is_dragging_insode ? TCN_TABDROPPED : TCN_TABDROPPEDOUTSIDE;
+            nmhdr.code = m_is_dragging_inside ? TCN_TABDROPPED : TCN_TABDROPPEDOUTSIDE;
             nmhdr.idFrom = reinterpret_cast<UINT_PTR>(this);
             ::SendMessage(m_hparent, WM_NOTIFY, 0, reinterpret_cast<LPARAM>(&nmhdr));
             return TRUE;
@@ -203,17 +202,17 @@ void TabControl::draw_item(DRAWITEMSTRUCT *dis)
     }
     bool isSelected = (num_tab == ::SendMessage(m_hwnd, TCM_GETCURSEL, 0, 0));
 
-    char label[64];
-    char *plabel = nullptr;
+    wchar_t label[64];
+    wchar_t *plabel = nullptr;
     label[63] = '\0';
-    TCITEM tci;
+    TCITEMW tci;
     tci.mask = TCIF_TEXT | TCIF_IMAGE;
     tci.pszText = label;
     tci.cchTextMax = 63;
 
-    if (!::SendMessage(m_hwnd, TCM_GETITEM, num_tab, reinterpret_cast<LPARAM>(&tci)))
+    if (!::SendMessageW(m_hwnd, TCM_GETITEM, num_tab, reinterpret_cast<LPARAM>(&tci)))
     {
-        ::MessageBox(NULL, "! TCM_GETITEM", "", MB_OK);
+        ::MessageBoxA(NULL, "! TCM_GETITEM", "", MB_OK);
         // return ::CallWindowProc(m_default_proc, hwnd, msg, wParam, lParam);
     }
     plabel = tci.pszText;
@@ -255,7 +254,7 @@ void TabControl::draw_item(DRAWITEMSTRUCT *dis)
     if (hImgLst && tci.iImage >= 0)
     {
         SIZE size;
-        ::GetTextExtentPoint(hDC, "  ", 2, &size);
+        ::GetTextExtentPointW(hDC, L"  ", 2, &size);
         rect.left += size.cx; // Margin
 
         // Get height of image so we
@@ -285,14 +284,14 @@ void TabControl::draw_item(DRAWITEMSTRUCT *dis)
 
         // pDC->SelectObject(&m_SelFont);
         rect.top -= ::GetSystemMetrics(SM_CYEDGE);
-        ::DrawText(hDC, plabel, strlen(plabel), &rect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
+        ::DrawTextW(hDC, plabel, wcslen(plabel), &rect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
     }
     else
     {
         COLORREF _unselectedColor = grey;
         ::SetTextColor(hDC, _unselectedColor);
         // pDC->SelectObject(&m_UnselFont);
-        ::DrawText(hDC, plabel, strlen(plabel), &rect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
+        ::DrawTextW(hDC, plabel, wcslen(plabel), &rect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
     }
     ::RestoreDC(hDC, nSavedDC);
 }
@@ -304,9 +303,9 @@ void TabControl::dragging_cursor(POINT screenPoint)
         ::SetCursor(::LoadCursor(NULL, IDC_ARROW));
     else
     {
-        char className[256];
+        wchar_t className[256];
         ::GetClassName(hWin, className, 256);
-        if ((!strcmp(className, "Scintilla")) || (!strcmp(className, WC_TABCONTROL)))
+        if ((!wcscmp(className, L"Scintilla")) || (!wcscmp(className, WC_TABCONTROLW)))
         {
             if (::GetKeyState(VK_LCONTROL) & 0x80000000)
                 ::SetCursor(::LoadCursor(m_hInstance, MAKEINTRESOURCE(IDC_DRAG_PLUS_TAB)));
@@ -330,7 +329,7 @@ void TabControl::exchangeItemData(POINT point)
     // The position is over a tab.
     if (hitinfo.flags != TCHT_NOWHERE)
     {
-        m_is_dragging_insode = true;
+        m_is_dragging_inside = true;
 
         if (nTab != m_tab_dragged)
         {
@@ -340,8 +339,8 @@ void TabControl::exchangeItemData(POINT point)
             // 2. shift their data, and insert the source
             TCITEM itemData_nDraggedTab, itemData_shift;
             itemData_nDraggedTab.mask = itemData_shift.mask = TCIF_IMAGE | TCIF_TEXT;
-            char str1[256];
-            char str2[256];
+            wchar_t str1[256];
+            wchar_t str2[256];
 
             itemData_nDraggedTab.pszText = str1;
             itemData_nDraggedTab.cchTextMax = (sizeof(str1));
@@ -363,9 +362,8 @@ void TabControl::exchangeItemData(POINT point)
             {
                 for (int i = m_tab_dragged; i < nTab; i++)
                 {
-                    int index = i + 1;
-                    TabCtrl_GetItem(m_hwnd, index, &itemData_shift);
-                    TabCtrl_GetItem(m_hwnd, i, &itemData_shift);
+                    TabCtrl_GetItem(m_hwnd, i+1, &itemData_shift);
+                    TabCtrl_SetItem(m_hwnd, i, &itemData_shift);
                 }
             }
             //
@@ -378,7 +376,7 @@ void TabControl::exchangeItemData(POINT point)
     else
     {
         //::SetCursor(::LoadCursor(_hInst, MAKEINTRESOURCE(IDC_DRAG_TAB)));
-        m_is_dragging_insode = false;
+        m_is_dragging_inside = false;
     }
 }
 

@@ -157,7 +157,7 @@ LRESULT TabControl::handle_message(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 
             NMHDR nmhdr;
             nmhdr.hwndFrom = m_hwnd;
-            nmhdr.code = m_is_dragging_insode ? TCN_TABDROPPED : TCN_TABDROPPEDOUTSIDE;
+            nmhdr.code = m_is_dragging_inside ? TCN_TABDROPPED : TCN_TABDROPPEDOUTSIDE;
             nmhdr.idFrom = reinterpret_cast<unsigned int>(this);
 
             ::SendMessage(m_hparent, WM_NOTIFY, 0, reinterpret_cast<LPARAM>(&nmhdr));
@@ -327,7 +327,7 @@ void TabControl::exchangeItemData(POINT point)
     // The position is over a tab.
     if (hitinfo.flags != TCHT_NOWHERE)
     {
-        m_is_dragging_insode = true;
+        m_is_dragging_inside = true;
 
         if (nTab != m_tab_dragged)
         {
@@ -374,7 +374,7 @@ void TabControl::exchangeItemData(POINT point)
     else
     {
         //::SetCursor(::LoadCursor(_hInst, MAKEINTRESOURCE(IDC_DRAG_TAB)));
-        m_is_dragging_insode = false;
+        m_is_dragging_inside = false;
     }
 }
 

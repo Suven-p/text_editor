@@ -17,7 +17,8 @@ LRESULT Os::MainWindow::handle_message(UINT uMsg, WPARAM wParam, LPARAM lParam)
             sce1.init(GetModuleHandle(0), m_hwnd);
             dc1.init(GetModuleHandle(0), m_hwnd, &sce1);
             sce1.set_marker_style(FolderStyle::FOLDER_STYLE_BOX);
-            dc1.newDoc("D:\\Programming\\nppv1\\SysMsg.h");
+            dc1.newDoc(L"D:\\Programming\\nppv1\\SysMsg.h");
+            dc1.newDoc(L"D:\\Programming\\NPP(v1 src)\\PowerEditor\\src\\WinControls\\TabBar\\TabBar.cpp");
             dc1.display();
             dc1.activate(0);
             sce1.display();
@@ -45,6 +46,10 @@ LRESULT Os::MainWindow::handle_message(UINT uMsg, WPARAM wParam, LPARAM lParam)
         int tab_height = 40;
         MoveWindow(dc1.window(), 0, 0, LOWORD(lParam), tab_height, true);
         MoveWindow(sce1.window(), 0, 25, LOWORD(lParam), HIWORD(lParam), true);
+        break;
+    }
+    case WM_SETFOCUS: {
+        sce1.get_focus();
         break;
     }
     case WM_DESTROY:
@@ -140,23 +145,29 @@ void Os::MainWindow::notify(SCNotification* notification)
         switch (static_cast<char>(notification->ch))
         {
         case '<': {
-            int word_end = pos;
-            while (word_end) {
-                char c = sce1.execute(SCI_GETCHARAT, word_end);
-                if (isspace(c))
-                    word_end--;
+            std::string prev = sce1.get_previous_word(pos - 2);
+            if (prev == "include" || prev == "template")
+            {
+                char to_insert[] = ">";
+                sce1.execute(SCI_ADDTEXT, strlen(to_insert), (LPARAM)to_insert);
+                sce1.execute(SCI_GOTOPOS, pos);
             }
-            int word_start = sce1.execute(SCI_WORDSTARTPOSITION, pos, true);
-            MessageBox(0, std::to_string(word_start).c_str(), std::to_string(pos).c_str(), 0);
-            char to_insert[] = ">";
-            sce1.execute(SCI_ADDTEXT, strlen(to_insert), (LPARAM)to_insert);
-            sce1.execute(SCI_GOTOPOS, pos);
             break;
         }
         case '[': {
             char to_insert[] = "]";
             sce1.execute(SCI_ADDTEXT, strlen(to_insert), (LPARAM)to_insert);
             sce1.execute(SCI_GOTOPOS, pos);
+            break;
+        }
+        case ']': {
+            char prev = sce1.execute(SCI_GETCHARAT, pos - 2);
+            // int main())
+            char next = sce1.execute(SCI_GETCHARAT, pos);
+            if (prev == '[' && next == ']')
+            {
+                sce1.execute(SCI_DELETERANGE, pos - 1, 1);
+            }
             break;
         }
         // TODO: Handle multiline function arguments
@@ -166,33 +177,57 @@ void Os::MainWindow::notify(SCNotification* notification)
             sce1.execute(SCI_GOTOPOS, pos);
             break;
         }
+        case ')': {
+            char prev = sce1.execute(SCI_GETCHARAT, pos - 2);
+            // int main())
+            char next = sce1.execute(SCI_GETCHARAT, pos);
+            if (next == ')')
+            {
+                sce1.execute(SCI_DELETERANGE, pos - 1, 1);
+                sce1.execute(SCI_GOTOPOS, pos);
+            }
+            break;
+        }
         case '{': {
-            // TODO: Handle logic in \n
             intptr_t current_line = sce1.execute(SCI_LINEFROMPOSITION, pos);
-            // 0x400 is base level folding
             int fold_level = (sce1.execute(SCI_GETFOLDLEVEL, current_line) & SC_FOLDLEVELNUMBERMASK) - 0x400;
             int bracket_indent = fold_level * sce1.get_indent_len();
             sce1.execute(SCI_SETLINEINDENTATION, current_line, bracket_indent);
-            std::string to_insert = "\n";
+            std::string to_insert = "}";
             sce1.execute(SCI_ADDTEXT, to_insert.size(), (LPARAM)to_insert.c_str());
-            // line after { requires extra level of indenting
-            int other_indent = (fold_level + 1) * sce1.get_indent_len();
-            // TODO: Add support for tab based indenting
-            to_insert = std::string(other_indent, ' ');
-            sce1.execute(SCI_ADDTEXT, to_insert.size(), (LPARAM)to_insert.c_str());
-            // Store current position to restore later
             pos = sce1.execute(SCI_GETCURRENTPOS, 0, 0);
-            to_insert = "\n}";
-            sce1.execute(SCI_ADDTEXT, to_insert.size(), (LPARAM)to_insert.c_str());
-            sce1.execute(SCI_SETLINEINDENTATION, current_line + 2, bracket_indent);
-            sce1.execute(SCI_GOTOPOS, pos);
+            // sce1.execute(SCI_SETLINEINDENTATION, current_line + 1, bracket_indent);
+            sce1.execute(SCI_GOTOPOS, pos - 1);
             break;
         }
         // TODO: Handle brace closes
         case '\n': {
-            // int current_line = sce1.execute(SCI_LINEFROMPOSITION, pos);
-            // int fold_level = sce1.execute(SCI_GETFOLDLEVEL, current_line);
-            // sce1.execute(SCI_SETINDENT, sce1.get_indent_len() * fold_level);
+            intptr_t current_line = sce1.execute(SCI_LINEFROMPOSITION, pos);
+            // 0x400 is base level folding
+            int fold_level = (sce1.execute(SCI_GETFOLDLEVEL, current_line) & SC_FOLDLEVELNUMBERMASK) - 0x400;
+            if (sce1.get_previous_char(pos - 2) == '{')
+            {
+                // line after { requires extra level of indenting
+                int other_indent = (fold_level + 1) * sce1.get_indent_len();
+                // TODO: Add support for tab based indenting
+                std::string to_insert = std::string(other_indent, ' ');
+                sce1.execute(SCI_ADDTEXT, to_insert.size(), (LPARAM)to_insert.c_str());
+                // Store current position to restore later
+                pos = sce1.execute(SCI_GETCURRENTPOS, 0, 0);
+                to_insert = "\n";
+                sce1.execute(SCI_ADDTEXT, to_insert.size(), (LPARAM)to_insert.c_str());
+                int bracket_indent = fold_level * sce1.get_indent_len();
+                sce1.execute(SCI_SETLINEINDENTATION, current_line + 1, bracket_indent);
+                sce1.execute(SCI_GOTOPOS, pos);
+            }
+            else if (fold_level > 0)
+            {
+                int indent = (fold_level)*sce1.get_indent_len();
+                std::string to_insert = std::string(indent, ' ');
+                sce1.execute(SCI_ADDTEXT, to_insert.size(), (LPARAM)to_insert.c_str());
+                sce1.execute(SCI_SETLINEINDENTATION, current_line, indent);
+            }
+            break;
         }
         default:
             break;

@@ -10,17 +10,17 @@
 
 int EditView::m_new_title = 0;
 
-// return the index if fn is found in EditView
+// return the index if name is found in EditView
 // otherwise -1
-int EditView::find(const char *fn) const
+int EditView::find(const wchar_t *name) const
 {
-    return m_sci_view->get_index(fn);
+    return m_sci_view->get_index(name);
 }
 
-char *EditView::newDocInit()
+wchar_t *EditView::newDocInit()
 {
     // create the new entry for this doc
-    char *newTitle = m_sci_view->attach_default_doc(++m_new_title);
+    wchar_t *newTitle = m_sci_view->attach_default_doc(++m_new_title);
 
     // create a new (the first) sub tab then hightlight it
     TabControl::insert(newTitle);
@@ -28,35 +28,35 @@ char *EditView::newDocInit()
     return newTitle;
 }
 
-const char *EditView::newDoc(const char *fn)
+const wchar_t *EditView::newDoc(const std::wstring& fn)
 {
-    char *completName;
-    if ((!fn) || (!strcmp(fn, "")))
-        completName = m_sci_view->create(++m_new_title);
+    wchar_t *complete_name;
+    if (fn.empty())
+        complete_name = m_sci_view->create(++m_new_title);
     else
-        completName = m_sci_view->create(fn);
+        complete_name = m_sci_view->create(fn);
     // for the title of sub tab
-    TabControl::insert(PathFindFileName(completName));
+    TabControl::insert(PathFindFileNameW(complete_name));
     TabControl::activate(m_num_tabs - 1);
     m_sci_view->set_document_language(LangType::L_CPP);
-    return (const char *)completName;
+    return complete_name;
 }
 
-const char *EditView::newDoc(Buffer &buf)
+const wchar_t *EditView::newDoc(Buffer &buf)
 {
-    const char *completName = buf.get_file_name();
+    const wchar_t *complete_name = buf.get_file_name();
     int i = m_sci_view->add_buffer(buf);
     m_sci_view->activate_document(i);
 
     // for the title of sub tab
-    TabControl::insert(PathFindFileName(completName));
+    TabControl::insert(PathFindFileNameW(complete_name));
     TabControl::activate(m_num_tabs - 1);
-    return completName;
+    return complete_name;
 }
 
 //! \brief this method activates the doc and the corresponding sub tab
 //! \brief return the index of previeus current doc
-char *EditView::activate(int index)
+wchar_t *EditView::activate(int index)
 {
     TabControl::activate(index);
     return m_sci_view->activate_document(index);
@@ -65,7 +65,7 @@ char *EditView::activate(int index)
 // this method updates the doc when user clicks a sub tab
 // return Null if the user clicks on an active sub tab,
 // otherwize the name of new activated doc
-char *EditView::clickedUpdate()
+wchar_t *EditView::clickedUpdate()
 {
     int indexClicked = int(::SendMessage(m_hwnd, TCM_GETCURSEL, 0, 0));
     if (indexClicked == m_sci_view->get_current_index())
@@ -75,7 +75,7 @@ char *EditView::clickedUpdate()
     m_sci_view->get_focus();
 }
 
-const char *EditView::close_current()
+const wchar_t *EditView::close_current()
 {
     if (m_num_tabs == 1)
     {
@@ -93,7 +93,7 @@ const char *EditView::close_current()
     return m_sci_view->get_current_title();
 }
 
-const char *EditView::closeAllDocs()
+const wchar_t *EditView::closeAllDocs()
 {
     m_sci_view->remove_all_docs();
     TabControl::delete_all();
@@ -108,25 +108,23 @@ void EditView::close_at(int index2Close)
     TabControl::delete_item(index2Close);
 }
 
-void EditView::updateCurrentTabItem(const char *title)
+void EditView::updateCurrentTabItem(const std::wstring& title)
 {
-    // char str[32];
     int currentIndex = TabCtrl_GetCurSel(m_hwnd);
-
     updateTabItem(currentIndex, title);
 }
 
-void EditView::updateTabItem(int index, const char *title)
+void EditView::updateTabItem(int index, const std::wstring& title)
 {
-    char str[32];
+    wchar_t str[32];
     TCITEM tie;
     tie.mask = TCIF_TEXT | TCIF_IMAGE;
     tie.pszText = str;
     tie.cchTextMax = (sizeof(str));
 
     TabCtrl_GetItem(m_hwnd, index, &tie);
-    if ((title) && (strcmp(title, "")))
-        tie.pszText = (char *)title;
+    if (title.empty())
+        tie.pszText = const_cast<wchar_t*>(title.c_str());
 
     bool isDirty = (m_sci_view->get_buffer(index)).is_dirty();        // is_current_buf_read_only();
     bool isReadOnly = (m_sci_view->get_buffer(index)).is_read_only(); // getCurrentDocStat();
