@@ -5,6 +5,7 @@ set(class_files
     ErrorMessage.cpp
     File.cpp
     Mainwindow.cpp
+    Menu.cpp
     Os.cpp
     TabControl.cpp
     Trie.cpp

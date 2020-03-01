@@ -1,9 +1,19 @@
 #include "MainWindow.hpp"
 #include "EditView.hpp"
+#include "Menu.hpp"
 #include "Scintilla.h"
 #include "TabControl.hpp"
 #include "resource.hpp"
 #include <vector>
+
+Menu file_menu = Menu("File",
+                      {Menu("New", {Menu("Header File (.hpp)"), Menu("Source File (.cpp)"), Menu("Text File (.txt)")}),
+                       Menu("Open"),
+                       Menu("Save"),
+                       Menu("Save As"),
+                       Menu("Exit")});
+
+Menu edit_menu = Menu("Edit", {Menu("Copy"), Menu("Cut"), Menu("Paste"), Menu("Find"), Menu("Find and Replace")});
 
 LRESULT Os::MainWindow::handle_message(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -12,6 +22,23 @@ LRESULT Os::MainWindow::handle_message(UINT uMsg, WPARAM wParam, LPARAM lParam)
     // TODO: Create (bottombar?)
     case WM_CREATE: {
         dc1.toggle_dragndrop(true);
+        HMENU hfile_menu = file_menu.init();
+        HMENU main_menu = CreateMenu();
+        std::vector<Menu> main_menu_arr = {file_menu, edit_menu};
+        for (auto var : main_menu_arr)
+        {
+            HMENU menu = var.init();
+            if (!AppendMenu(main_menu, MF_POPUP, (UINT_PTR)menu, var.get_name().c_str()))
+            {
+                std::string err_msg = "Error " + std::to_string(GetLastError()) + " when appending.";
+                throw std::runtime_error(err_msg);
+            }
+        }
+        if (!SetMenu(m_hwnd, main_menu))
+        {
+            std::string err_msg = "Error" + std::to_string(GetLastError()) + " when setting menu.";
+            throw std::runtime_error(err_msg);
+        }
         try
         {
             sce1.init(GetModuleHandle(0), m_hwnd);
@@ -41,7 +68,11 @@ LRESULT Os::MainWindow::handle_message(UINT uMsg, WPARAM wParam, LPARAM lParam)
         notify(reinterpret_cast<SCNotification*>(lParam));
         return FALSE;
     }
-
+    case WM_COMMAND: {
+        if (LOWORD(wParam) == 106)
+            PostQuitMessage(0);
+        break;
+    }
     case WM_SIZE: {
         int tab_height = 40;
         MoveWindow(dc1.window(), 0, 0, LOWORD(lParam), tab_height, true);
@@ -202,6 +233,7 @@ void Os::MainWindow::notify(SCNotification* notification)
         }
         // TODO: Handle brace closes
         case '\n': {
+            // TODO: Handle non { character 
             intptr_t current_line = sce1.execute(SCI_LINEFROMPOSITION, pos);
             // 0x400 is base level folding
             int fold_level = (sce1.execute(SCI_GETFOLDLEVEL, current_line) & SC_FOLDLEVELNUMBERMASK) - 0x400;
@@ -229,10 +261,15 @@ void Os::MainWindow::notify(SCNotification* notification)
             }
             break;
         }
-        default:
+        case 'i': {
+            sce1.execute(SCI_AUTOCSHOW, 1, reinterpret_cast<LPARAM>("include int"));
             break;
         }
+        default:
 
+            break;
+        }
+    
         break;
     }
     case SCN_MODIFIED: {
