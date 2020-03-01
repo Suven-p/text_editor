@@ -119,7 +119,7 @@ void EditControl::set_font(int style, const char* font, bool is_bold, bool is_it
 const char cInstrWords[] = "if else switch case default break goto return for while do continue typedef sizeof NULL";
 const char cppInstrWords[] =
     "if else switch case default break goto return for while do continue typedef sizeof NULL new delete throw try "
-    "catch namespace operator this const_cast static_cast dynamic_cast reinterpreter_cast true false null";
+    "catch namespace operator this const_cast static_cast dynamic_cast reinterpreter_cast true false null using";
 
 const char c_types[] = "void struct union enum char short int long double float signed unsigned const static extern "
                        "auto register volatile";
@@ -152,7 +152,7 @@ void EditControl::set_cpp_lexer(LangType langauge)
     set_style(SCE_C_CHARACTER, RGB(226, 31, 31), white, 0, 0);  // 7
     set_style(SCE_C_PREPROCESSOR, brown, white, 0, 0);          // 9
     set_style(SCE_C_OPERATOR, darkBlue, white, 0, 0);           // 10
-    set_style(SCE_C_IDENTIFIER, RGB(116, 18, 33), white);
+    set_style(SCE_C_IDENTIFIER, greenBlue, white);
     //execute(SCI_STYLESETBOLD, SCE_C_OPERATOR, 1);
     set_style(SCE_C_PREPROCESSORCOMMENT, grey, white);
     // set_style(SCE_C_STRINGEOL, darkBlue, white, 0, 0); //12
