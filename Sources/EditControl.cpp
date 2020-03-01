@@ -183,7 +183,7 @@ void EditControl::set_document_language(LangType language)
     // All the global styles should put here
     set_style(STYLE_INDENTGUIDE, liteGrey);
     set_style(STYLE_CONTROLCHAR, liteGrey, red);
-    set_style(STYLE_BRACELIGHT, blue, grey);
+    set_style(STYLE_BRACELIGHT, blue, RGB(200, 200, 200));
     set_caret_color_width(caretColor, caretWidth);
     set_selection_color(selectColorFore, selectColorBack);
     execute(SCI_COLOURISE, 0, -1);

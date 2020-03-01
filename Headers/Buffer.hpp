@@ -103,11 +103,6 @@ class Buffer
         {
             return (attributes & FILE_ATTRIBUTE_READONLY);
         }
-        else
-        {
-            std::string err_msg = "Error " + std::to_string(GetLastError()) + " Cannot create scintilla window";
-            throw std::runtime_error(err_msg);
-        }
     }
     bool is_read_only()
     {
