@@ -201,6 +201,7 @@ void EditView::file_save(std::wstring ffile_name)
     ofn.nMaxFileTitle = 0;
     ofn.lpstrInitialDir = NULL;
     ofn.Flags = OFN_OVERWRITEPROMPT;
+    ofn.lpstrDefExt = L"cpp";
     if (ffile_name == L"")
     {
         GetSaveFileNameW(&ofn);

@@ -88,7 +88,7 @@ LRESULT Os::MainWindow::handle_message(UINT uMsg, WPARAM wParam, LPARAM lParam)
             break;
         }
         case IDM_SAVE_AS: {
-
+            dc1.file_save(L"");
             break;
         }
         case IDM_EXIT: {
