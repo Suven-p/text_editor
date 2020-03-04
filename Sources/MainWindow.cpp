@@ -1,19 +1,15 @@
 #include "MainWindow.hpp"
 #include "EditView.hpp"
+#include "File.hpp"
 #include "Menu.hpp"
 #include "Scintilla.h"
 #include "TabControl.hpp"
 #include "resource.hpp"
+#include <fstream>
 #include <vector>
 
-Menu file_menu = Menu("File",
-                      {Menu("New", {Menu("Header File (.hpp)"), Menu("Source File (.cpp)"), Menu("Text File (.txt)")}),
-                       Menu("Open"),
-                       Menu("Save"),
-                       Menu("Save As"),
-                       Menu("Exit")});
-
-Menu edit_menu = Menu("Edit", {Menu("Copy"), Menu("Cut"), Menu("Paste"), Menu("Find"), Menu("Find and Replace")});
+Menu file_menu =
+    Menu("File", {Menu("New"), Menu("Open"), Menu(""), Menu("Save"), Menu("Save As"), Menu(""), Menu("Exit")});
 
 LRESULT Os::MainWindow::handle_message(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -24,7 +20,7 @@ LRESULT Os::MainWindow::handle_message(UINT uMsg, WPARAM wParam, LPARAM lParam)
         dc1.toggle_dragndrop(true);
         HMENU hfile_menu = file_menu.init();
         HMENU main_menu = CreateMenu();
-        std::vector<Menu> main_menu_arr = {file_menu, edit_menu};
+        std::vector<Menu> main_menu_arr = {file_menu};
         for (auto var : main_menu_arr)
         {
             HMENU menu = var.init();
@@ -44,8 +40,6 @@ LRESULT Os::MainWindow::handle_message(UINT uMsg, WPARAM wParam, LPARAM lParam)
             sce1.init(GetModuleHandle(0), m_hwnd);
             dc1.init(GetModuleHandle(0), m_hwnd, &sce1);
             sce1.set_marker_style(FolderStyle::FOLDER_STYLE_BOX);
-            dc1.newDoc(L"D:\\Programming\\nppv1\\SysMsg.h");
-            dc1.newDoc(L"D:\\Programming\\NPP(v1 src)\\PowerEditor\\src\\WinControls\\TabBar\\TabBar.cpp");
             dc1.display();
             dc1.activate(0);
             sce1.display();
@@ -69,8 +63,40 @@ LRESULT Os::MainWindow::handle_message(UINT uMsg, WPARAM wParam, LPARAM lParam)
         return FALSE;
     }
     case WM_COMMAND: {
-        if (LOWORD(wParam) == 106)
+        switch (LOWORD(wParam))
+        {
+        case IDM_NEW: {
+            dc1.newDoc(L"");
+            break;
+        }
+        case IDM_OPEN: {
+            dc1.file_open();
+            break;
+        }
+        case IDM_SAVE: {
+            std::wstring file_name = sce1.get_current_buffer().get_file_name();
+            //MessageBoxW(0, file_name.c_str(), L"a", 0);
+            std::ifstream file(file_name);
+            if (file) {
+                MessageBoxA(0, "a", "a", 0);
+                dc1.file_save(file_name);
+            }
+            else
+            {
+                dc1.file_save(L"");
+            }
+            break;
+        }
+        case IDM_SAVE_AS: {
+
+            break;
+        }
+        case IDM_EXIT: {
             PostQuitMessage(0);
+            break;
+        }
+        }
+        return 0;
         break;
     }
     case WM_SIZE: {
@@ -233,7 +259,7 @@ void Os::MainWindow::notify(SCNotification* notification)
         }
         // TODO: Handle brace closes
         case '\n': {
-            // TODO: Handle non { character 
+            // TODO: Handle non { character
             intptr_t current_line = sce1.execute(SCI_LINEFROMPOSITION, pos);
             // 0x400 is base level folding
             int fold_level = (sce1.execute(SCI_GETFOLDLEVEL, current_line) & SC_FOLDLEVELNUMBERMASK) - 0x400;
@@ -269,7 +295,7 @@ void Os::MainWindow::notify(SCNotification* notification)
 
             break;
         }
-    
+
         break;
     }
     case SCN_MODIFIED: {

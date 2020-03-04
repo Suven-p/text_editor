@@ -49,6 +49,8 @@ class EditView : public TabControl
         rc.bottom -= 40;
         m_sci_view->resize_to(rc);
     };
+    void file_open();
+    void file_save(std::wstring ffile_name);
 
   private:
     static int m_new_title;
