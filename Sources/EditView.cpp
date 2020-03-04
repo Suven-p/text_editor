@@ -158,8 +158,13 @@ void EditView::file_open()
     {
         char read_buffer[BUFFER_SIZE] = {0};
         DWORD num_bytes_read = 0;
-        HANDLE h_file =
-            CreateFileW(ofn.lpstrFile, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        HANDLE h_file = CreateFileW(ofn.lpstrFile,
+                                    GENERIC_READ,
+                                    FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                    NULL,
+                                    OPEN_EXISTING,
+                                    FILE_ATTRIBUTE_NORMAL,
+                                    NULL);
 
         newDoc(ofn.lpstrFile);
         while (1)

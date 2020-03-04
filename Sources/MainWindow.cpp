@@ -211,6 +211,15 @@ void Os::MainWindow::notify(SCNotification* notification)
             }
             break;
         }
+        case '>': {
+            char next = sce1.execute(SCI_GETCHARAT, pos);
+            if (next == '>')
+            {
+                sce1.execute(SCI_DELETERANGE, pos - 1, 1);
+                sce1.execute(SCI_GOTOPOS, pos);
+            }
+            break;
+        }
         case '[': {
             char to_insert[] = "]";
             sce1.execute(SCI_ADDTEXT, strlen(to_insert), (LPARAM)to_insert);
@@ -218,12 +227,11 @@ void Os::MainWindow::notify(SCNotification* notification)
             break;
         }
         case ']': {
-            char prev = sce1.execute(SCI_GETCHARAT, pos - 2);
-            // int main())
             char next = sce1.execute(SCI_GETCHARAT, pos);
-            if (prev == '[' && next == ']')
+            if (next == ']')
             {
                 sce1.execute(SCI_DELETERANGE, pos - 1, 1);
+                sce1.execute(SCI_GOTOPOS, pos);
             }
             break;
         }
@@ -236,7 +244,6 @@ void Os::MainWindow::notify(SCNotification* notification)
         }
         case ')': {
             char prev = sce1.execute(SCI_GETCHARAT, pos - 2);
-            // int main())
             char next = sce1.execute(SCI_GETCHARAT, pos);
             if (next == ')')
             {
@@ -263,10 +270,12 @@ void Os::MainWindow::notify(SCNotification* notification)
             intptr_t current_line = sce1.execute(SCI_LINEFROMPOSITION, pos);
             // 0x400 is base level folding
             int fold_level = (sce1.execute(SCI_GETFOLDLEVEL, current_line) & SC_FOLDLEVELNUMBERMASK) - 0x400;
-            if (sce1.get_previous_char(pos - 2) == '{')
+            int prev_fold_level = (sce1.execute(SCI_GETFOLDLEVEL, current_line - 1) & SC_FOLDLEVELNUMBERMASK) - 0x400;
+            sce1.execute(SCI_SETLINEINDENTATION, current_line - 1, prev_fold_level * sce1.get_indent_len());
+            if (sce1.execute(SCI_GETCHARAT, pos - 3) == '{')
             {
                 // line after { requires extra level of indenting
-                int other_indent = (fold_level + 1) * sce1.get_indent_len();
+                int other_indent = (prev_fold_level + 1) * sce1.get_indent_len();
                 // TODO: Add support for tab based indenting
                 std::string to_insert = std::string(other_indent, ' ');
                 sce1.execute(SCI_ADDTEXT, to_insert.size(), (LPARAM)to_insert.c_str());
@@ -287,26 +296,109 @@ void Os::MainWindow::notify(SCNotification* notification)
             }
             break;
         }
-        case 'i': {
-            sce1.execute(SCI_AUTOCSHOW, 1, reinterpret_cast<LPARAM>("include int"));
-            break;
-        }
+
         default:
 
             break;
         }
+        switch (sce1.execute(SCI_GETCHARAT, sce1.execute(SCI_WORDSTARTPOSITION, pos, true)))
+        {
+        case 'i': {
+            sce1.execute(SCI_AUTOCSHOW, 1, reinterpret_cast<LPARAM>("if include inline int iostream"));
+            break;
+        }
 
+        case 'c': {
+            sce1.execute(SCI_AUTOCSHOW, 1, reinterpret_cast<LPARAM>("case catch char const continue"));
+            break;
+        }
+
+        case 'd': {
+            sce1.execute(SCI_AUTOCSHOW, 1, reinterpret_cast<LPARAM>("default delete do double dynamic_cast"));
+            break;
+        }
+
+        case 'e': {
+            sce1.execute(SCI_AUTOCSHOW, 1, reinterpret_cast<LPARAM>("else enum explicit export extern"));
+            break;
+        }
+
+        case 'f': {
+            sce1.execute(SCI_AUTOCSHOW, 1, reinterpret_cast<LPARAM>("false float for friend"));
+            break;
+        }
+        case 'r': {
+            sce1.execute(SCI_AUTOCSHOW, 1, reinterpret_cast<LPARAM>("register reinterpret_cast return"));
+            break;
+        }
+
+        case 'n': {
+            sce1.execute(SCI_AUTOCSHOW, 1, reinterpret_cast<LPARAM>("namespace new nullptr"));
+            break;
+        }
+
+        case 'p': {
+            sce1.execute(SCI_AUTOCSHOW, 1, reinterpret_cast<LPARAM>("private protected public"));
+            break;
+        }
+
+        case 's': {
+            sce1.execute(SCI_AUTOCSHOW, 1, reinterpret_cast<LPARAM>("signed short sizeof static struct switch"));
+            break;
+        }
+
+        case 't': {
+            sce1.execute(SCI_AUTOCSHOW, 1, reinterpret_cast<LPARAM>("templete this try throw typedef typeid typename"));
+            break;
+        }
+        }
         break;
     }
     case SCN_MODIFIED: {
-        if ((notification->modificationType & SC_PERFORMED_USER) &&
-            (notification->modificationType & SC_MOD_INSERTTEXT))
+        if ((notification->modificationType & SC_MOD_INSERTCHECK))
         {
-            // TODO: Format document on paste
-            /*std::string msg = "Add at " + std::to_string(notification->position) + " of length " +
-                              std::to_string(notification->length);
-            msg += " Now at " + std::to_string(sce1.execute(SCI_GETCURRENTPOS));
-            MessageBox(0, msg.c_str(), "add", 0);*/
+            // if (notification->length > 2)
+            //{
+            //    int pos = notification->position;
+            //    int length = notification->length;
+            //    char* to_insert = new char[length + 1];
+            //    int cur_fold_level = 0;
+            //    intptr_t i_new_text = 0;
+            //    for (intptr_t i_old_text = 0, size = pos + notification->length, j = 0; i_old_text < length;
+            //    i_old_text++)
+            //    {
+            //        char c = notification->text[i_old_text];
+            //        if (c == '\n')
+            //        {
+            //            to_insert[i_new_text++] = c;
+            //            while (isspace(c))
+            //            {
+            //                i_old_text++;
+            //            }
+            //            int indent = cur_fold_level * sce1.get_indent_len();
+            //            while (indent--)
+            //            {
+            //                to_insert[i_new_text++] = ' ';
+            //            }
+            //        }
+            //        else
+            //        {
+            //            if (c == '{' || c == '(')
+            //            {
+            //                cur_fold_level++;
+            //            }
+            //            else if (c == '}' || c == ')')
+            //            {
+            //                cur_fold_level--;
+            //            }
+            //            to_insert[i_new_text++] = c;
+            //        }
+            //    }
+            //    to_insert[i_new_text] = 0;
+            //    MessageBoxA(0, to_insert, " ", 0);
+            //    // msg += " Now at " + std::to_string(sce1.execute(SCI_GETCURRENTPOS));
+            //    // MessageBox(0, msg.c_str(), "add", 0);
+            //}
         }
         break;
     }
