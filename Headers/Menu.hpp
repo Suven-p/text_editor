@@ -4,6 +4,12 @@
 #include <string>
 #include <vector>
 
+#define IDM_NEW 107
+#define IDM_OPEN 108
+#define IDM_SAVE 110
+#define IDM_SAVE_AS 111
+#define IDM_EXIT 113
+
 class Menu
 {
     std::string m_name;

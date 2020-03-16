@@ -1,5 +1,6 @@
 #include "MainWindow.hpp"
 #include "Scintilla.h"
+#include "Trie.hpp"
 #include "resource.hpp"
 #include <cstring>
 #include <shlwapi.h>

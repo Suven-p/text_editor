@@ -115,7 +115,6 @@ class Buffer
     {
         return m_is_dirty;
     }
-
   private:
     // TODO: convert file path to wchar
     wchar_t* m_full_path{nullptr};

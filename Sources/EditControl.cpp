@@ -148,8 +148,8 @@ void EditControl::set_cpp_lexer(LangType langauge)
     set_style(SCE_C_WORD2, purple, white);                               // 5
     
     // execute(SCI_STYLESETBOLD, SCE_C_WORD, 1);
-    set_style(SCE_C_STRING, RGB(225, 31, 31), white, 0, 0); // 6 // red
-    set_style(SCE_C_CHARACTER, RGB(226, 31, 31), white, 0, 0);  // 7
+    set_style(SCE_C_STRING, RGB(31, 31, 251), white, 0, 0); // 6 // red
+    set_style(SCE_C_CHARACTER, orange, white, 0, 0);  // 7
     set_style(SCE_C_PREPROCESSOR, brown, white, 0, 0);          // 9
     set_style(SCE_C_OPERATOR, darkBlue, white, 0, 0);           // 10
     set_style(SCE_C_IDENTIFIER, greenBlue, white);
