@@ -7,6 +7,7 @@
 #include "Os.hpp"
 #include "SciLexer.h"
 #include "Scintilla.h"
+#include "Trie.hpp"
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -14,8 +15,6 @@
 using SCINTILLA_PTR = sptr_t;
 using BUFFER_ARRAY = std::vector<Buffer>;
 using CHARACTER_RANGE = Sci_CharacterRange;
-
-#define LINEDRAW_FONT "LINEDRAW.TTF"
 constexpr int NUM_FOLDER_STATE = 7;
 
 enum class FolderStyle
@@ -30,9 +29,9 @@ enum class FolderStyle
 class EditControl : public Os::BaseWindow
 {
   public:
-    EditControl()
-        : BaseWindow(), m_scintilla_function(NULL), m_scintilla_pointer(NULL), m_current_index(0), _MSLineDrawFont(0)
+    EditControl() : BaseWindow(), m_scintilla_function(NULL), m_scintilla_pointer(NULL), m_current_index(0)
     {
+        initialize_trie(&cpp_word_trie);
         ++m_num_objects;
     }
     virtual ~EditControl()
@@ -42,10 +41,6 @@ class EditControl : public Os::BaseWindow
         if ((!m_num_objects) && (m_hscintilla))
         {
             ::FreeLibrary(m_hscintilla);
-        }
-        if (_MSLineDrawFont)
-        {
-            ::RemoveFontResource(LINEDRAW_FONT);
         }
     }
     virtual void destroy()
@@ -260,7 +255,7 @@ class EditControl : public Os::BaseWindow
                 break;
             word_end--;
         }
-        int word_start = execute(SCI_WORDSTARTPOSITION, word_end, false);
+        Sci_Position word_start = execute(SCI_WORDSTARTPOSITION, word_end, false);
         char* buffer = new char[word_end - word_start + 1];
         Sci_TextRange tr;
         tr.chrg.cpMin = word_start;
@@ -269,8 +264,13 @@ class EditControl : public Os::BaseWindow
         execute(SCI_GETTEXTRANGE, 0, (LPARAM)&tr);
         return std::string(buffer);
     }
+    std::string get_suggestion(std::string to_search)
+    {
+        return cpp_word_trie.get_suggestion(to_search);
+    }
 
   private:
+    Trie cpp_word_trie;
     static int indent_len;
     static HINSTANCE m_hscintilla;
     // Keep track of number of objects. Handle to scintilla.dll will be freed if number of objects reaches zero
@@ -280,8 +280,6 @@ class EditControl : public Os::BaseWindow
     SciFnDirect m_scintilla_function;
     SCINTILLA_PTR m_scintilla_pointer;
     BUFFER_ARRAY m_buffer_array;
-    // TODO: Remove _mSLineDrawFont
-    int _MSLineDrawFont;
     int m_current_index;
     void set_style(int style, COLORREF fore, COLORREF back = white, int size = -1, const char* font_name = 0) const;
     void set_font(int style, const char* font_name, bool is_bold = false, bool is_italic = false) const;

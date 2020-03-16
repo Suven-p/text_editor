@@ -9,11 +9,7 @@ class BaseWindow
     BaseWindow(HINSTANCE hInst, HWND parent) : m_hInstance(hInst), m_hparent(parent), m_hwnd(NULL){};
     virtual ~BaseWindow() = default;
     virtual void destroy() = 0;
-    virtual void init(HINSTANCE hinst, HWND parent)
-    {
-        m_hInstance = hinst;
-        m_hparent = parent;
-    }
+    virtual void init(HINSTANCE hinst, HWND parent) : m_hInstance(hinst), m_hparent(parent){}
     virtual void display(bool show = true) const
     {
         ::ShowWindow(m_hwnd, (show) ? SW_SHOW : SW_HIDE);

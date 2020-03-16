@@ -75,9 +75,10 @@ LRESULT Os::MainWindow::handle_message(UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
         case IDM_SAVE: {
             std::wstring file_name = sce1.get_current_buffer().get_file_name();
-            //MessageBoxW(0, file_name.c_str(), L"a", 0);
+            // MessageBoxW(0, file_name.c_str(), L"a", 0);
             std::ifstream file(file_name);
-            if (file) {
+            if (file)
+            {
                 MessageBoxA(0, "a", "a", 0);
                 dc1.file_save(file_name);
             }
@@ -301,58 +302,19 @@ void Os::MainWindow::notify(SCNotification* notification)
 
             break;
         }
-        switch (sce1.execute(SCI_GETCHARAT, sce1.execute(SCI_WORDSTARTPOSITION, pos, true)))
+        if (isalpha(notification->ch) || (notification->ch == '_'))
         {
-        case 'i': {
-            sce1.execute(SCI_AUTOCSHOW, 1, reinterpret_cast<LPARAM>("if include inline int iostream"));
-            break;
+            char* entered_word;
+            int word_start = sce1.execute(SCI_WORDSTARTPOSITION, pos, true);
+            Sci_TextRange tr;
+            tr.chrg.cpMin = word_start;
+            tr.chrg.cpMax = pos + 1;
+            entered_word = new char[tr.chrg.cpMax - tr.chrg.cpMin + 1];
+            tr.lpstrText = entered_word;
+            sce1.execute(SCI_GETTEXTRANGE, 0, reinterpret_cast < LPARAM>(& tr));
+            std::string suggestions = sce1.get_suggestion(entered_word);
+            sce1.execute(SCI_AUTOCSHOW, strlen(tr.lpstrText), reinterpret_cast<LPARAM>(suggestions.c_str()));
         }
-
-        case 'c': {
-            sce1.execute(SCI_AUTOCSHOW, 1, reinterpret_cast<LPARAM>("case catch char const continue"));
-            break;
-        }
-
-        case 'd': {
-            sce1.execute(SCI_AUTOCSHOW, 1, reinterpret_cast<LPARAM>("default delete do double dynamic_cast"));
-            break;
-        }
-
-        case 'e': {
-            sce1.execute(SCI_AUTOCSHOW, 1, reinterpret_cast<LPARAM>("else enum explicit export extern"));
-            break;
-        }
-
-        case 'f': {
-            sce1.execute(SCI_AUTOCSHOW, 1, reinterpret_cast<LPARAM>("false float for friend"));
-            break;
-        }
-        case 'r': {
-            sce1.execute(SCI_AUTOCSHOW, 1, reinterpret_cast<LPARAM>("register reinterpret_cast return"));
-            break;
-        }
-
-        case 'n': {
-            sce1.execute(SCI_AUTOCSHOW, 1, reinterpret_cast<LPARAM>("namespace new nullptr"));
-            break;
-        }
-
-        case 'p': {
-            sce1.execute(SCI_AUTOCSHOW, 1, reinterpret_cast<LPARAM>("private protected public"));
-            break;
-        }
-
-        case 's': {
-            sce1.execute(SCI_AUTOCSHOW, 1, reinterpret_cast<LPARAM>("signed short sizeof static struct switch"));
-            break;
-        }
-
-        case 't': {
-            sce1.execute(SCI_AUTOCSHOW, 1, reinterpret_cast<LPARAM>("templete this try throw typedef typeid typename"));
-            break;
-        }
-        }
-        break;
     }
     case SCN_MODIFIED: {
         if ((notification->modificationType & SC_MOD_INSERTCHECK))
